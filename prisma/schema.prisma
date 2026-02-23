@@ -1,0 +1,187 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String        @id @default(cuid())
+  email        String        @unique
+  createdAt    DateTime      @default(now())
+  transactions Transaction[]
+  assets       AssetLot[]
+  sales        AssetSale[]
+  reminders    Reminder[]
+  budgets      Budget[]
+  taxProfile   TaxProfile?
+  wallets      Wallet[]
+}
+
+model Wallet {
+  id             String        @id @default(cuid())
+  name           String
+  icon           String?
+  color          String?
+  currency       String        @default("INR")
+  openingBalance Int           @default(0)
+  userId         String
+  user           User          @relation(fields: [userId], references: [id])
+  transactions   Transaction[]
+  createdAt      DateTime      @default(now())
+  @@index([userId])
+}
+
+model Transaction {
+  id          String          @id @default(cuid())
+  date        DateTime
+  amount      Int
+  category    String
+  description String?
+  source      ImportSource
+  type        TransactionType
+  isRecurring Boolean         @default(false)
+  walletId    String
+  wallet      Wallet          @relation(fields: [walletId], references: [id])
+  userId      String
+  user        User            @relation(fields: [userId], references: [id])
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+  @@unique([userId, date, amount, description])
+  @@index([userId, date])
+  @@index([userId, category])
+  @@index([walletId])
+}
+
+enum TransactionType {
+  INCOME
+  EXPENSE
+  INVESTMENT
+  TRANSFER
+}
+
+enum ImportSource {
+  SPENDEE
+  HDFC
+  SBI
+  ICICI
+  AXIS
+  KOTAK
+  YES_BANK
+  ZERODHA
+  GROWW
+  UPSTOX
+  ANGEL_ONE
+  CAMS
+  KFINTECH
+  MANUAL
+  OTHER
+}
+
+model Budget {
+  id          String   @id @default(cuid())
+  category    String
+  monthYear   String
+  limitAmount Int
+  userId      String
+  user        User     @relation(fields: [userId], references: [id])
+  createdAt   DateTime @default(now())
+  @@unique([userId, category, monthYear])
+  @@index([userId, monthYear])
+}
+
+model AssetLot {
+  id             String      @id @default(cuid())
+  symbol         String
+  isin           String?
+  assetType      AssetType
+  quantityUnits  Int
+  buyPricePaise  Int
+  buyDate        DateTime
+  remainingUnits Int
+  userId         String
+  user           User        @relation(fields: [userId], references: [id])
+  sales          AssetSale[]
+  createdAt      DateTime    @default(now())
+  @@index([userId, symbol])
+  @@index([userId, buyDate])
+}
+
+model AssetSale {
+  id              String    @id @default(cuid())
+  symbol          String
+  isin            String?
+  assetType       AssetType
+  quantityUnits   Int
+  sellPricePaise  Int
+  sellDate        DateTime
+  gainType        GainType
+  holdingDays     Int
+  gainAmountPaise Int
+  lotId           String
+  lot             AssetLot  @relation(fields: [lotId], references: [id])
+  userId          String
+  user            User      @relation(fields: [userId], references: [id])
+  createdAt       DateTime  @default(now())
+  @@index([userId, sellDate])
+  @@index([userId, gainType])
+}
+
+enum AssetType {
+  STOCK
+  EQUITY_MF
+  DEBT_MF
+  ETF
+  BOND
+}
+
+enum GainType {
+  STCG
+  LTCG
+}
+
+model Reminder {
+  id        String       @id @default(cuid())
+  title     String
+  dueDate   DateTime
+  amount    Int?
+  type      ReminderType
+  isPaid    Boolean      @default(false)
+  userId    String
+  user      User         @relation(fields: [userId], references: [id])
+  createdAt DateTime     @default(now())
+  @@index([userId, dueDate])
+  @@index([userId, isPaid])
+}
+
+enum ReminderType {
+  ADVANCE_TAX
+  INSURANCE_PREMIUM
+  OTHER
+}
+
+model TaxProfile {
+  id             String       @id @default(cuid())
+  financialYear  String
+  regime         TaxRegime
+  taxpayerType   TaxpayerType
+  incomeSource   String
+  tdsDeducted    Int          @default(0)
+  deductions     Json
+  userId         String       @unique
+  user           User         @relation(fields: [userId], references: [id])
+  updatedAt      DateTime     @updatedAt
+}
+
+enum TaxRegime {
+  OLD
+  NEW
+}
+
+enum TaxpayerType {
+  INDIVIDUAL
+  SENIOR_CITIZEN
+  SUPER_SENIOR_CITIZEN
+}
