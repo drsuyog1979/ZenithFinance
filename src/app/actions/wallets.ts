@@ -51,14 +51,27 @@ export async function createWallet(data: { name: string, currency?: string, open
         const userId = await getUserId();
 
         // Ensure user exists in our DB before creating the wallet
-        await prisma.user.upsert({
-            where: { id: userId },
-            update: {},
-            create: {
-                id: userId,
-                email: (await (await createClient()).auth.getUser()).data.user?.email || "",
+        const supabaseUser = (await (await createClient()).auth.getUser()).data.user;
+        try {
+            await prisma.user.upsert({
+                where: { id: userId },
+                update: {},
+                create: {
+                    id: userId,
+                    email: supabaseUser?.email || "",
+                },
+            });
+        } catch (e: any) {
+            if (e.code === "P2002") {
+                // Email exists under a different ID — re-point to current auth ID
+                await prisma.user.update({
+                    where: { email: supabaseUser?.email! },
+                    data: { id: userId },
+                });
+            } else {
+                throw e;
             }
-        });
+        }
 
         const wallet = await prisma.wallet.create({
             data: {

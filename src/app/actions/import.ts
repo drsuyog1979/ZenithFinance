@@ -9,12 +9,26 @@ async function getUserAndEnsureExists() {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) throw new Error("Unauthorized");
 
-    // Ensure user row exists in our DB
-    await prisma.user.upsert({
-        where: { id: user.id },
-        update: {},
-        create: { id: user.id, email: user.email || "" },
-    });
+    try {
+        await prisma.user.upsert({
+            where: { id: user.id },
+            update: {},
+            create: { id: user.id, email: user.email || "" },
+        });
+    } catch (e: any) {
+        // P2002 = unique constraint violation on email.
+        // This can happen if the user previously signed up and was assigned a different
+        // DB row ID (e.g. during testing). Fix: re-point the existing email row to the
+        // current Supabase auth ID so all future operations link correctly.
+        if (e.code === "P2002") {
+            await prisma.user.update({
+                where: { email: user.email! },
+                data: { id: user.id },
+            });
+        } else {
+            throw e;
+        }
+    }
 
     return user.id;
 }
