@@ -44,8 +44,8 @@ export function CategoryCards({ data }: { data: { category: string, amount: numb
                     return (
                         <div key={i} className="flex flex-col min-w-[120px] bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-2xl p-4 shadow-sm">
                             <div
-                                className="w-10 h-10 rounded-full flex items-center justify-center mb-3"
-                                style={{ backgroundColor: `${cat.color}20`, color: cat.color }}
+                                className="w-10 h-10 rounded-full flex items-center justify-center mb-3 dynamic-bg-light dynamic-text"
+                                style={{ "--dynamic-color": cat.color } as React.CSSProperties}
                             >
                                 <Icon size={20} />
                             </div>
@@ -130,8 +130,8 @@ export function RecentTransactions({ transactions }: { transactions: ExtTransact
                                 <div key={tx.id} className="flex items-center justify-between p-3 hover:bg-gray-50 dark:hover:bg-gray-800/50 rounded-xl transition-colors cursor-pointer group">
                                     <div className="flex items-center gap-4">
                                         <div
-                                            className="w-12 h-12 rounded-xl flex items-center justify-center transition-transform group-hover:scale-105"
-                                            style={{ backgroundColor: `${color}15`, color: color }}
+                                            className="w-12 h-12 rounded-xl flex items-center justify-center transition-transform group-hover:scale-105 dynamic-bg-light dynamic-text"
+                                            style={{ "--dynamic-color": color } as React.CSSProperties}
                                         >
                                             <Icon size={24} />
                                         </div>

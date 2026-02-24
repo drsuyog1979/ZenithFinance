@@ -5,14 +5,22 @@
   --color-brand-navy-light: #2c5380;
   --color-brand-navy-dark: #0f243b;
 
-  --color-category-food: #f97316; /* orange-500 */
-  --color-category-transport: #3b82f6; /* blue-500 */
-  --color-category-shopping: #ec4899; /* pink-500 */
-  --color-category-utilities: #eab308; /* yellow-500 */
-  --color-category-health: #10b981; /* emerald-500 */
-  --color-category-entertainment: #8b5cf6; /* violet-500 */
-  --color-category-income: #22c55e; /* green-500 */
-  --color-category-expense: #ef4444; /* red-500 */
+  --color-category-food: #f97316;
+  /* orange-500 */
+  --color-category-transport: #3b82f6;
+  /* blue-500 */
+  --color-category-shopping: #ec4899;
+  /* pink-500 */
+  --color-category-utilities: #eab308;
+  /* yellow-500 */
+  --color-category-health: #10b981;
+  /* emerald-500 */
+  --color-category-entertainment: #8b5cf6;
+  /* violet-500 */
+  --color-category-income: #22c55e;
+  /* green-500 */
+  --color-category-expense: #ef4444;
+  /* red-500 */
 }
 
 @layer base {
@@ -47,6 +55,24 @@
 
 @layer utilities {
   .text-balance {
+    max-width: 100%;
+    overflow-wrap: break-word;
+    /* Fallback for older browsers */
+    white-space: normal;
+    /* Modern balancing where supported */
     text-wrap: balance;
+  }
+
+  /* Utilities for dynamic colors to avoid inline style lints */
+  .dynamic-bg {
+    background-color: var(--dynamic-color);
+  }
+
+  .dynamic-text {
+    color: var(--dynamic-color);
+  }
+
+  .dynamic-bg-light {
+    background-color: color-mix(in srgb, var(--dynamic-color), transparent 85%);
   }
 }

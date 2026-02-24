@@ -39,15 +39,15 @@ export function WalletList({ wallets }: { wallets: any[] }) {
                 <div key={wallet.id} className="bg-white dark:bg-gray-900 rounded-3xl p-6 shadow-sm border border-gray-100 dark:border-gray-800 relative group overflow-hidden transition-all hover:shadow-md">
                     {/* Card background blob based on color */}
                     <div
-                        className="absolute -right-8 -top-8 w-32 h-32 rounded-full opacity-[0.03] transition-transform group-hover:scale-110"
-                        style={{ backgroundColor: wallet.color || "var(--color-brand-navy)" }}
+                        className="absolute -right-8 -top-8 w-32 h-32 rounded-full opacity-[0.03] transition-transform group-hover:scale-110 dynamic-bg"
+                        style={{ "--dynamic-color": wallet.color || "var(--color-brand-navy)" } as React.CSSProperties}
                     />
 
                     <div className="flex justify-between items-start mb-6">
                         <div className="flex items-center gap-3">
                             <div
-                                className="w-10 h-10 rounded-full flex items-center justify-center text-white"
-                                style={{ backgroundColor: wallet.color || "var(--color-brand-navy)" }}
+                                className="w-10 h-10 rounded-full flex items-center justify-center text-white dynamic-bg"
+                                style={{ "--dynamic-color": wallet.color || "var(--color-brand-navy)" } as React.CSSProperties}
                             >
                                 <Wallet size={20} />
                             </div>
@@ -57,13 +57,17 @@ export function WalletList({ wallets }: { wallets: any[] }) {
                             </div>
                         </div>
                         <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                            <button className="p-1.5 text-gray-400 hover:text-[var(--color-brand-navy)] transition-colors rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800">
+                            <button
+                                className="p-1.5 text-gray-400 hover:text-[var(--color-brand-navy)] transition-colors rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800"
+                                aria-label="Edit wallet"
+                            >
                                 <Edit2 size={16} />
                             </button>
                             <button
                                 onClick={() => handleDelete(wallet.id)}
                                 disabled={isDeleting === wallet.id}
                                 className="p-1.5 text-gray-400 hover:text-red-500 transition-colors rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 disabled:opacity-50"
+                                aria-label="Delete wallet"
                             >
                                 <Trash2 size={16} />
                             </button>

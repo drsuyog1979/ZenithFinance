@@ -15,6 +15,7 @@ export function MonthSelector({ currentDate, onChange }: MonthSelectorProps) {
             <button
                 onClick={() => onChange(subMonths(currentDate, 1))}
                 className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full transition-colors"
+                aria-label="Previous month"
             >
                 <ChevronLeft className="w-5 h-5 text-gray-500" />
             </button>
@@ -26,6 +27,7 @@ export function MonthSelector({ currentDate, onChange }: MonthSelectorProps) {
             <button
                 onClick={() => onChange(addMonths(currentDate, 1))}
                 className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full transition-colors"
+                aria-label="Next month"
             >
                 <ChevronRight className="w-5 h-5 text-gray-500" />
             </button>
