@@ -1,10 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useSearchParams } from "next/navigation";
 import { format } from "date-fns";
 import {
     ShoppingBag, Utensils, Car, HeartPulse, Home, Zap, Tv, Briefcase,
-    Search, Filter, Trash2, Edit2, Loader2, ArrowUpDown
+    Search, Trash2, Edit2, Loader2
 } from "lucide-react";
 import { deleteTransaction } from "@/app/actions/transactions";
 
@@ -15,11 +16,20 @@ export function TransactionList({
     initialTransactions: any[],
     wallets: any[]
 }) {
+    const searchParams = useSearchParams();
     const [transactions, setTransactions] = useState(initialTransactions);
     const [search, setSearch] = useState("");
     const [typeFilter, setTypeFilter] = useState("ALL");
     const [walletFilter, setWalletFilter] = useState("ALL");
     const [deletingId, setDeletingId] = useState<string | null>(null);
+
+    // Pre-filter from URL param e.g. /transactions?type=INCOME
+    useEffect(() => {
+        const t = searchParams.get("type");
+        if (t && ["INCOME", "EXPENSE", "INVESTMENT", "TRANSFER"].includes(t)) {
+            setTypeFilter(t);
+        }
+    }, [searchParams]);
 
     const formatINR = (value: number) => {
         return new Intl.NumberFormat('en-IN', {

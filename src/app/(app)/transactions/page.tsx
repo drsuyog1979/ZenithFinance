@@ -1,8 +1,9 @@
 import { getTransactions } from "@/app/actions/transactions"
 import { getWallets } from "@/app/actions/wallets"
 import { TransactionList } from "@/components/transactions/TransactionList"
-import { AlertCircle, Upload } from "lucide-react"
+import { AlertCircle, Upload, Loader2 } from "lucide-react"
 import Link from "next/link"
+import { Suspense } from "react"
 
 export const dynamic = "force-dynamic"
 
@@ -37,11 +38,12 @@ export default async function TransactionsPage() {
                 </Link>
             </div>
 
-            <TransactionList
-                initialTransactions={txRes.data || []}
-                wallets={walletRes.data || []}
-            />
+            <Suspense fallback={<div className="flex justify-center py-12"><Loader2 className="animate-spin w-8 h-8 text-gray-400" /></div>}>
+                <TransactionList
+                    initialTransactions={txRes.data || []}
+                    wallets={walletRes.data || []}
+                />
+            </Suspense>
         </div>
     )
 }
-
