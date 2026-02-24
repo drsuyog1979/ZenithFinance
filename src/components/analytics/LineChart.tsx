@@ -45,7 +45,7 @@ export function TrendLineChart({ data }: LineChartProps) {
                         tickFormatter={(value) => formatINR(value)}
                     />
                     <Tooltip
-                        formatter={(value: number, name: string) => [formatFullINR(value), name === 'income' ? 'Income' : 'Expense']}
+                        formatter={(value: any, name?: string) => [formatFullINR(Number(value)), name === 'income' ? 'Income' : 'Expense']}
                         contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
                     />
                     <Legend verticalAlign="top" height={36} iconType="circle" />

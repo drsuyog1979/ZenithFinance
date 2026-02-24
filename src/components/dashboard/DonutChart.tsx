@@ -50,7 +50,7 @@ export function SpendDonutChart({ data }: DonutChartProps) {
                         ))}
                     </Pie>
                     <Tooltip
-                        formatter={(value: number) => formatINR(value)}
+                        formatter={(value: any) => formatINR(Number(value))}
                         contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
                     />
                     <Legend verticalAlign="bottom" height={36} iconType="circle" />

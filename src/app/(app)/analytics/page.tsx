@@ -49,7 +49,7 @@ export default async function AnalyticsPage() {
         tx.type === "EXPENSE" &&
         new Date(tx.date).getMonth() === currentDate.getMonth() &&
         new Date(tx.date).getFullYear() === currentDate.getFullYear()
-    ).map(tx => ({ date: new Date(tx.date), amount: tx.amount }))
+    ).map(tx => ({ date: new Date(tx.date), amount: tx.amount, category: tx.category }))
 
     // 3. Line Chart Data (Income vs Expense over 6 months)
     const lineData = []

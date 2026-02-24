@@ -45,7 +45,7 @@ export function BarChart({ data }: BarChartProps) {
                         tickFormatter={(value) => formatINR(value)}
                     />
                     <Tooltip
-                        formatter={(value: number) => [formatFullINR(value), 'Spent']}
+                        formatter={(value: any) => [formatFullINR(Number(value)), 'Spent']}
                         cursor={{ fill: 'var(--color-gray-100)', opacity: 0.5 }}
                         contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
                     />
