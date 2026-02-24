@@ -86,3 +86,30 @@ export async function deleteTransaction(transactionId: string) {
         return { error: error.message };
     }
 }
+
+export async function updateTransaction(
+    transactionId: string,
+    data: {
+        amount?: number;
+        category?: string;
+        description?: string;
+        type?: TransactionType;
+        date?: Date;
+        walletId?: string;
+    }
+) {
+    try {
+        const userId = await getUserId();
+        const tx = await prisma.transaction.findUnique({ where: { id: transactionId } });
+        if (tx?.userId !== userId) throw new Error("Unauthorized");
+
+        const updated = await prisma.transaction.update({
+            where: { id: transactionId },
+            data,
+            include: { wallet: true },
+        });
+        return { data: updated };
+    } catch (error: any) {
+        return { error: error.message };
+    }
+}

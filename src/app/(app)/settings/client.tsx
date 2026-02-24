@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import {
     Moon, Sun, Monitor, Download, Cloud, Tag, IndianRupee, LogOut, ChevronRight,
     ChevronDown, Loader2, Check, ShoppingBag, Utensils, Car, HeartPulse, Home,
-    Zap, Tv, Briefcase, X
+    Zap, Tv, Briefcase, X, Plus, Lock, Trash2
 } from "lucide-react";
 import { createClient } from "@/utils/supabase/client";
 import { useRouter } from "next/navigation";
@@ -42,6 +42,8 @@ export function SettingsClient({ userEmail }: { userEmail: string }) {
     const [resetStep, setResetStep] = useState<"idle" | "confirm" | "deleting" | "done">("idle");
     const [resetResult, setResetResult] = useState<{ transactions: number; wallets: number; budgets: number } | null>(null);
     const [resetError, setResetError] = useState("");
+    const [customCategories, setCustomCategories] = useState<string[]>([]);
+    const [newCategory, setNewCategory] = useState("");
 
     // Load theme from localStorage on mount
     useEffect(() => {
@@ -68,6 +70,31 @@ export function SettingsClient({ userEmail }: { userEmail: string }) {
         const saved = localStorage.getItem("zenith-currency");
         if (saved) setSelectedCurrency(saved);
     }, []);
+
+    // Load custom categories from localStorage
+    useEffect(() => {
+        try {
+            const saved = localStorage.getItem("zenith-custom-categories");
+            if (saved) setCustomCategories(JSON.parse(saved));
+        } catch { }
+    }, []);
+
+    const addCustomCategory = () => {
+        const name = newCategory.trim();
+        if (!name) return;
+        const builtInNames = CATEGORIES.map(c => c.name.toLowerCase());
+        if (builtInNames.includes(name.toLowerCase()) || customCategories.map(c => c.toLowerCase()).includes(name.toLowerCase())) return;
+        const updated = [...customCategories, name];
+        setCustomCategories(updated);
+        localStorage.setItem("zenith-custom-categories", JSON.stringify(updated));
+        setNewCategory("");
+    };
+
+    const removeCustomCategory = (name: string) => {
+        const updated = customCategories.filter(c => c !== name);
+        setCustomCategories(updated);
+        localStorage.setItem("zenith-custom-categories", JSON.stringify(updated));
+    };
 
     const handleCurrencySelect = (code: string) => {
         setSelectedCurrency(code);
@@ -214,7 +241,7 @@ export function SettingsClient({ userEmail }: { userEmail: string }) {
                                 </div>
                                 <div>
                                     <p className="font-semibold text-gray-900 dark:text-gray-100">Manage Categories</p>
-                                    <p className="text-sm text-gray-500">{CATEGORIES.length} built-in categories</p>
+                                    <p className="text-sm text-gray-500">{CATEGORIES.length} built-in + {customCategories.length} custom</p>
                                 </div>
                             </div>
                             {showCategories
@@ -224,9 +251,31 @@ export function SettingsClient({ userEmail }: { userEmail: string }) {
                         </button>
 
                         {showCategories && (
-                            <div className="border-t border-gray-100 dark:border-gray-800 px-6 pb-4">
-                                <p className="text-xs text-gray-400 py-3">Built-in categories (used across transactions & budgets)</p>
-                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                            <div className="border-t border-gray-100 dark:border-gray-800 px-6 pb-5">
+
+                                {/* Add new category */}
+                                <div className="flex gap-2 py-4">
+                                    <input
+                                        type="text"
+                                        value={newCategory}
+                                        onChange={(e) => setNewCategory(e.target.value)}
+                                        onKeyDown={(e) => { if (e.key === "Enter") addCustomCategory(); }}
+                                        placeholder="Add new category..."
+                                        className="flex-1 px-4 py-2.5 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-sm focus:ring-2 focus:ring-[var(--color-brand-navy)] outline-none"
+                                    />
+                                    <button
+                                        onClick={addCustomCategory}
+                                        disabled={!newCategory.trim()}
+                                        className="px-4 py-2.5 bg-[var(--color-brand-navy)] text-white rounded-xl flex items-center gap-1.5 text-sm font-medium hover:opacity-90 transition-opacity disabled:opacity-40"
+                                    >
+                                        <Plus size={16} />
+                                        Add
+                                    </button>
+                                </div>
+
+                                {/* Built-in */}
+                                <p className="text-xs text-gray-400 pb-2 uppercase font-semibold tracking-wider">Built-in</p>
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-4">
                                     {CATEGORIES.map(cat => {
                                         const Icon = cat.icon;
                                         return (
@@ -240,12 +289,40 @@ export function SettingsClient({ userEmail }: { userEmail: string }) {
                                                 >
                                                     <Icon size={16} />
                                                 </div>
-                                                <span className="text-sm font-medium text-gray-900 dark:text-gray-100">{cat.name}</span>
+                                                <span className="text-sm font-medium text-gray-900 dark:text-gray-100 flex-1">{cat.name}</span>
+                                                <Lock size={12} className="text-gray-300 dark:text-gray-600" />
                                             </div>
                                         );
                                     })}
                                 </div>
-                                <p className="text-xs text-gray-400 mt-4 text-center">Custom category management coming in Phase 2</p>
+
+                                {/* Custom */}
+                                {customCategories.length > 0 && (
+                                    <>
+                                        <p className="text-xs text-gray-400 pb-2 uppercase font-semibold tracking-wider">Custom</p>
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                            {customCategories.map(name => (
+                                                <div
+                                                    key={name}
+                                                    className="flex items-center gap-3 p-3 rounded-xl bg-purple-50/50 dark:bg-purple-900/10 border border-purple-100 dark:border-purple-900/30"
+                                                >
+                                                    <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 bg-purple-100 dark:bg-purple-900/30 text-purple-500">
+                                                        <Tag size={16} />
+                                                    </div>
+                                                    <span className="text-sm font-medium text-gray-900 dark:text-gray-100 flex-1">{name}</span>
+                                                    <button
+                                                        onClick={() => removeCustomCategory(name)}
+                                                        className="p-1 text-gray-400 hover:text-red-500 transition-colors rounded"
+                                                        title={`Remove ${name}`}
+                                                        aria-label={`Remove category ${name}`}
+                                                    >
+                                                        <Trash2 size={14} />
+                                                    </button>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </>
+                                )}
                             </div>
                         )}
                     </div>
