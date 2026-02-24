@@ -8,6 +8,7 @@ import {
 } from "lucide-react";
 import { createClient } from "@/utils/supabase/client";
 import { useRouter } from "next/navigation";
+import { resetAllUserData } from "@/app/actions/import";
 
 const CATEGORIES = [
     { name: "Food & Dining", color: "#f97316", icon: Utensils },
@@ -38,6 +39,9 @@ export function SettingsClient({ userEmail }: { userEmail: string }) {
     const [showCategories, setShowCategories] = useState(false);
     const [showCurrency, setShowCurrency] = useState(false);
     const [selectedCurrency, setSelectedCurrency] = useState("INR");
+    const [resetStep, setResetStep] = useState<"idle" | "confirm" | "deleting" | "done">("idle");
+    const [resetResult, setResetResult] = useState<{ transactions: number; wallets: number; budgets: number } | null>(null);
+    const [resetError, setResetError] = useState("");
 
     // Load theme from localStorage on mount
     useEffect(() => {
@@ -252,7 +256,7 @@ export function SettingsClient({ userEmail }: { userEmail: string }) {
             {/* Data Section */}
             <div className="bg-white dark:bg-gray-900 rounded-3xl shadow-sm border border-gray-100 dark:border-gray-800 overflow-hidden">
                 <div className="px-6 py-4 bg-gray-50/50 dark:bg-gray-800/50 border-b border-gray-100 dark:border-gray-800">
-                    <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Data & Backup</h3>
+                    <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Data &amp; Backup</h3>
                 </div>
 
                 <div className="divide-y divide-gray-100 dark:divide-gray-800">
@@ -272,6 +276,105 @@ export function SettingsClient({ userEmail }: { userEmail: string }) {
                         </div>
                         {isExporting ? <Loader2 className="animate-spin text-gray-400" size={20} /> : <ChevronRight className="text-gray-400" size={20} />}
                     </button>
+                </div>
+            </div>
+
+            {/* ── Danger Zone ───────────────────────────────────────────── */}
+            <div className="bg-white dark:bg-gray-900 rounded-3xl shadow-sm border border-red-100 dark:border-red-900/40 overflow-hidden">
+                <div className="px-6 py-4 bg-red-50/50 dark:bg-red-900/20 border-b border-red-100 dark:border-red-900/40">
+                    <h3 className="text-xs font-semibold text-red-500 uppercase tracking-wider">⚠ Danger Zone</h3>
+                </div>
+
+                <div className="p-6 space-y-4">
+                    {resetStep === "idle" && (
+                        <div className="flex items-start justify-between gap-4">
+                            <div>
+                                <p className="font-semibold text-gray-900 dark:text-gray-100">Reset All Data</p>
+                                <p className="text-sm text-gray-500 mt-0.5">
+                                    Permanently delete all transactions, wallets, and budgets. Your account stays active.
+                                </p>
+                            </div>
+                            <button
+                                onClick={() => setResetStep("confirm")}
+                                className="flex-shrink-0 px-4 py-2 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 rounded-xl text-sm font-medium hover:bg-red-100 dark:hover:bg-red-900/40 transition-colors border border-red-200 dark:border-red-800"
+                            >
+                                Reset Data
+                            </button>
+                        </div>
+                    )}
+
+                    {resetStep === "confirm" && (
+                        <div className="bg-red-50 dark:bg-red-900/20 rounded-2xl p-5 space-y-4">
+                            <div className="flex items-start gap-3">
+                                <div className="text-2xl">⚠️</div>
+                                <div>
+                                    <p className="font-bold text-red-700 dark:text-red-400">This cannot be undone.</p>
+                                    <p className="text-sm text-red-600 dark:text-red-400 mt-1">
+                                        All your transactions, wallets, and budgets will be permanently deleted.
+                                        Your login and account settings will remain intact.
+                                    </p>
+                                </div>
+                            </div>
+                            <div className="flex gap-3">
+                                <button
+                                    onClick={async () => {
+                                        setResetStep("deleting");
+                                        setResetError("");
+                                        const result = await resetAllUserData();
+                                        if (result.error) {
+                                            setResetError(result.error);
+                                            setResetStep("confirm");
+                                        } else {
+                                            setResetResult(result);
+                                            setResetStep("done");
+                                        }
+                                    }}
+                                    className="flex-1 flex items-center justify-center gap-2 py-3 bg-red-600 hover:bg-red-700 text-white rounded-xl text-sm font-semibold transition-colors"
+                                >
+                                    Yes, delete everything
+                                </button>
+                                <button
+                                    onClick={() => setResetStep("idle")}
+                                    className="flex-1 py-3 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 rounded-xl text-sm font-medium hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+                                >
+                                    Cancel
+                                </button>
+                            </div>
+                            {resetError && (
+                                <p className="text-xs text-red-500">{resetError}</p>
+                            )}
+                        </div>
+                    )}
+
+                    {resetStep === "deleting" && (
+                        <div className="flex items-center gap-3 text-red-600 py-2">
+                            <Loader2 size={20} className="animate-spin" />
+                            <p className="text-sm font-medium">Deleting your data&hellip;</p>
+                        </div>
+                    )}
+
+                    {resetStep === "done" && resetResult && (
+                        <div className="bg-emerald-50 dark:bg-emerald-900/20 rounded-2xl p-5 space-y-3">
+                            <div className="flex items-center gap-2 text-emerald-700 dark:text-emerald-400">
+                                <Check size={20} />
+                                <p className="font-semibold">Data reset complete</p>
+                            </div>
+                            <div className="grid grid-cols-3 gap-3 text-center">
+                                {[{ label: "Transactions", n: resetResult.transactions }, { label: "Wallets", n: resetResult.wallets }, { label: "Budgets", n: resetResult.budgets }].map(item => (
+                                    <div key={item.label} className="bg-white dark:bg-gray-800 rounded-xl p-3">
+                                        <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">{item.n}</p>
+                                        <p className="text-xs text-gray-500 mt-0.5">{item.label} deleted</p>
+                                    </div>
+                                ))}
+                            </div>
+                            <a
+                                href="/dashboard"
+                                className="block w-full text-center py-3 bg-[var(--color-brand-navy)] text-white rounded-xl text-sm font-semibold hover:bg-[var(--color-brand-navy-light)] transition-colors"
+                            >
+                                Start fresh → Dashboard
+                            </a>
+                        </div>
+                    )}
                 </div>
             </div>
 

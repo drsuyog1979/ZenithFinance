@@ -320,3 +320,37 @@ export async function rollbackSpendeeImport(afterTimestamp: string): Promise<{ d
         return { deleted: 0, error: e.message };
     }
 }
+
+// ── Reset: wipe ALL financial data for the user (keep account) ──────────────
+export async function resetAllUserData(): Promise<{
+    transactions: number;
+    budgets: number;
+    wallets: number;
+    error?: string;
+}> {
+    try {
+        const supabase = await createClient();
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) throw new Error("Unauthorized");
+
+        const userId = user.id;
+
+        // Delete in FK-safe order: transactions first (ref wallets + user),
+        // then budgets, then wallets
+        const [txResult, budgetResult] = await Promise.all([
+            prisma.transaction.deleteMany({ where: { userId } }),
+            prisma.budget.deleteMany({ where: { userId } }),
+        ]);
+
+        // Wallets must come after transactions (FK constraint)
+        const walletResult2 = await prisma.wallet.deleteMany({ where: { userId } });
+
+        return {
+            transactions: txResult.count,
+            budgets: budgetResult.count,
+            wallets: walletResult2.count,
+        };
+    } catch (e: any) {
+        return { transactions: 0, budgets: 0, wallets: 0, error: e.message };
+    }
+}
