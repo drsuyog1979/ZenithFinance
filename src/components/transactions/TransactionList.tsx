@@ -162,13 +162,14 @@ export function TransactionList({
                                         const isExpense = tx.type === "EXPENSE";
                                         const isInvestment = tx.type === "INVESTMENT";
                                         const color = getColor(tx.category);
+                                        const iconColor = isIncome ? "#10b981" : isExpense ? "#ef4444" : isInvestment ? "#3b82f6" : color;
 
                                         return (
                                             <div key={tx.id} className="p-4 hover:bg-gray-50/50 dark:hover:bg-gray-800/30 transition-colors group flex items-center justify-between">
                                                 <div className="flex items-center gap-4">
                                                     <div
                                                         className="w-12 h-12 rounded-xl flex items-center justify-center dynamic-bg-light dynamic-text"
-                                                        style={{ "--dynamic-color": color } as React.CSSProperties}
+                                                        style={{ "--dynamic-color": iconColor } as React.CSSProperties}
                                                     >
                                                         <Icon size={24} />
                                                     </div>

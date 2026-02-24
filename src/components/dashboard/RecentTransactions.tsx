@@ -127,13 +127,14 @@ export function RecentTransactions({ transactions }: { transactions: ExtTransact
                             const isExpense = tx.type === "EXPENSE";
                             const isInvestment = tx.type === "INVESTMENT";
                             const color = getColor(tx.category);
+                            const iconColor = isIncome ? "#10b981" : isExpense ? "#ef4444" : isInvestment ? "#3b82f6" : color;
 
                             return (
                                 <div key={tx.id} className="flex items-center justify-between p-3 hover:bg-gray-50 dark:hover:bg-gray-800/50 rounded-xl transition-colors cursor-pointer group">
                                     <div className="flex items-center gap-4">
                                         <div
                                             className="w-12 h-12 rounded-xl flex items-center justify-center transition-transform group-hover:scale-105 dynamic-bg-light dynamic-text"
-                                            style={{ "--dynamic-color": color } as React.CSSProperties}
+                                            style={{ "--dynamic-color": iconColor } as React.CSSProperties}
                                         >
                                             <Icon size={24} />
                                         </div>
@@ -152,9 +153,9 @@ export function RecentTransactions({ transactions }: { transactions: ExtTransact
                                         </div>
                                     </div>
                                     <div className={`font-semibold ${isIncome ? 'text-emerald-600 dark:text-emerald-400' :
-                                            isExpense ? 'text-red-500 dark:text-red-400' :
-                                                isInvestment ? 'text-blue-500 dark:text-blue-400' :
-                                                    'text-gray-500 dark:text-gray-400'
+                                        isExpense ? 'text-red-500 dark:text-red-400' :
+                                            isInvestment ? 'text-blue-500 dark:text-blue-400' :
+                                                'text-gray-500 dark:text-gray-400'
                                         }`}>
                                         {isIncome ? '+' : isExpense ? '-' : ''}{formatINR(tx.amount)}
                                     </div>
