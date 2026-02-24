@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, Wallet, PlusCircle, Target, PieChart } from "lucide-react";
+import { LayoutDashboard, Wallet, PlusCircle, PieChart, Settings } from "lucide-react";
 
 export function BottomNav() {
   const pathname = usePathname();
@@ -11,8 +11,8 @@ export function BottomNav() {
     { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
     { name: "Wallets", href: "/wallets", icon: Wallet },
     { name: "Add", href: "/transactions/new", icon: PlusCircle, special: true },
-    { name: "Budgets", href: "/budgets", icon: Target },
     { name: "Analytics", href: "/analytics", icon: PieChart },
+    { name: "Settings", href: "/settings", icon: Settings },
   ];
 
   return (
@@ -36,8 +36,8 @@ export function BottomNav() {
             key={item.name}
             href={item.href}
             className={`flex flex-col items-center justify-center w-16 h-full gap-1 transition-colors ${isActive
-                ? "text-[var(--color-brand-navy)] dark:text-[var(--color-brand-navy-light)] font-medium"
-                : "text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200"
+              ? "text-[var(--color-brand-navy)] dark:text-[var(--color-brand-navy-light)] font-medium"
+              : "text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200"
               }`}
           >
             <Icon size={20} strokeWidth={isActive ? 2.5 : 2} />
