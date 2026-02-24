@@ -8,9 +8,20 @@ export async function GET(request: Request) {
 
     if (code) {
         const supabase = await createClient()
-        const { error } = await supabase.auth.exchangeCodeForSession(code)
+        const { data: { user }, error } = await supabase.auth.exchangeCodeForSession(code)
 
-        if (!error) {
+        if (!error && user) {
+            // Sync user with Prisma
+            const { prisma } = await import('@/lib/prisma')
+            await prisma.user.upsert({
+                where: { id: user.id },
+                update: { email: user.email! },
+                create: {
+                    id: user.id,
+                    email: user.email!,
+                },
+            })
+
             return NextResponse.redirect(`${origin}${next}`)
         }
     }

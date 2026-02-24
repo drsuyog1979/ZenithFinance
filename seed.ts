@@ -66,6 +66,7 @@ async function main() {
 
   // Salary Income
   transactions.push({
+    userId: user.id,
     walletId: wallets[0].id,
     type: "INCOME" as const,
     amount: 15000000, // 1.5L
@@ -89,13 +90,14 @@ async function main() {
     const wallet = Math.random() > 0.3 ? wallets[0] : wallets[1];
 
     transactions.push({
+      userId: user.id,
       walletId: wallet.id,
       type: "EXPENSE" as const,
       amount: amountPaise,
       date: date,
       category: expenseTemp.cat,
       description: expenseTemp.desc,
-      source: Math.random() > 0.8 ? "SPENDEE_IMPORT" : "MANUAL",
+      source: Math.random() > 0.8 ? "GROWW" : "MANUAL",
       isRecurring: false
     });
   }
