@@ -102,6 +102,8 @@ export function TransactionList({
 
                     <div className="flex gap-2">
                         <select
+                            aria-label="Filter by type"
+                            title="Filter by type"
                             value={typeFilter}
                             onChange={(e) => setTypeFilter(e.target.value)}
                             className="px-4 py-2.5 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl focus:ring-2 focus:ring-[var(--color-brand-navy)] outline-none"
@@ -114,6 +116,8 @@ export function TransactionList({
                         </select>
 
                         <select
+                            aria-label="Filter by account"
+                            title="Filter by account"
                             value={walletFilter}
                             onChange={(e) => setWalletFilter(e.target.value)}
                             className="px-4 py-2.5 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl focus:ring-2 focus:ring-[var(--color-brand-navy)] outline-none"
@@ -143,23 +147,28 @@ export function TransactionList({
                                     <h3 className="font-semibold text-gray-900 dark:text-gray-100">
                                         {format(new Date(dateStr), "EEEE, MMM d")}
                                     </h3>
-                                    <span className={`font-medium ${dailyTotal < 0 ? 'text-gray-900 dark:text-gray-100' : 'text-[var(--color-category-income)]'}`}>
-                                        {dailyTotal !== 0 ? formatINR(Math.abs(dailyTotal)) : ''}
+                                    <span className={`font-semibold text-sm ${dailyTotal > 0 ? 'text-emerald-600 dark:text-emerald-400' :
+                                        dailyTotal < 0 ? 'text-red-500 dark:text-red-400' :
+                                            'text-gray-400'
+                                        }`}>
+                                        {dailyTotal > 0 ? '+' : dailyTotal < 0 ? '-' : ''}{dailyTotal !== 0 ? formatINR(Math.abs(dailyTotal)) : ''}
                                     </span>
                                 </div>
 
                                 <div className="divide-y divide-gray-50 dark:divide-gray-800/50">
                                     {txs.map((tx) => {
                                         const Icon = getIcon(tx.category);
-                                        const isIncome = tx.type === "INCOME" || tx.amount > 0;
+                                        const isIncome = tx.type === "INCOME";
+                                        const isExpense = tx.type === "EXPENSE";
+                                        const isInvestment = tx.type === "INVESTMENT";
                                         const color = getColor(tx.category);
 
                                         return (
                                             <div key={tx.id} className="p-4 hover:bg-gray-50/50 dark:hover:bg-gray-800/30 transition-colors group flex items-center justify-between">
                                                 <div className="flex items-center gap-4">
                                                     <div
-                                                        className="w-12 h-12 rounded-xl flex items-center justify-center"
-                                                        style={{ backgroundColor: `${color}15`, color: color }}
+                                                        className="w-12 h-12 rounded-xl flex items-center justify-center dynamic-bg-light dynamic-text"
+                                                        style={{ "--dynamic-color": color } as React.CSSProperties}
                                                     >
                                                         <Icon size={24} />
                                                     </div>
@@ -185,8 +194,12 @@ export function TransactionList({
                                                 </div>
 
                                                 <div className="flex items-center gap-4">
-                                                    <div className={`font-semibold whitespace-nowrap ${isIncome ? 'text-[var(--color-category-income)]' : 'text-gray-900 dark:text-gray-100'}`}>
-                                                        {isIncome ? '+' : '-'}{formatINR(Math.abs(tx.amount))}
+                                                    <div className={`font-semibold whitespace-nowrap ${isIncome ? 'text-emerald-600 dark:text-emerald-400' :
+                                                        isExpense ? 'text-red-500 dark:text-red-400' :
+                                                            isInvestment ? 'text-blue-500 dark:text-blue-400' :
+                                                                'text-gray-500 dark:text-gray-400'
+                                                        }`}>
+                                                        {isIncome ? '+' : isExpense ? '-' : ''}{formatINR(tx.amount)}
                                                     </div>
 
                                                     {/* Actions appear on hover */}

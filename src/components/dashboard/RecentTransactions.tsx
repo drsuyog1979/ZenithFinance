@@ -123,7 +123,9 @@ export function RecentTransactions({ transactions }: { transactions: ExtTransact
                     <div className="space-y-3">
                         {txs.map((tx) => {
                             const Icon = getIcon(tx.category);
-                            const isIncome = tx.type === "INCOME" || tx.amount > 0;
+                            const isIncome = tx.type === "INCOME";
+                            const isExpense = tx.type === "EXPENSE";
+                            const isInvestment = tx.type === "INVESTMENT";
                             const color = getColor(tx.category);
 
                             return (
@@ -149,8 +151,12 @@ export function RecentTransactions({ transactions }: { transactions: ExtTransact
                                             </p>
                                         </div>
                                     </div>
-                                    <div className={`font-semibold ${isIncome ? 'text-[var(--color-category-income)]' : 'text-gray-900 dark:text-gray-100'}`}>
-                                        {isIncome ? '+' : '-'}{formatINR(Math.abs(tx.amount))}
+                                    <div className={`font-semibold ${isIncome ? 'text-emerald-600 dark:text-emerald-400' :
+                                            isExpense ? 'text-red-500 dark:text-red-400' :
+                                                isInvestment ? 'text-blue-500 dark:text-blue-400' :
+                                                    'text-gray-500 dark:text-gray-400'
+                                        }`}>
+                                        {isIncome ? '+' : isExpense ? '-' : ''}{formatINR(tx.amount)}
                                     </div>
                                 </div>
                             );
