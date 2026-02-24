@@ -1,13 +1,14 @@
 import { getTransactions } from "@/app/actions/transactions"
 import { getWallets } from "@/app/actions/wallets"
 import { TransactionList } from "@/components/transactions/TransactionList"
-import { AlertCircle } from "lucide-react"
+import { AlertCircle, Upload } from "lucide-react"
+import Link from "next/link"
 
 export const dynamic = "force-dynamic"
 
 export default async function TransactionsPage() {
     const [txRes, walletRes] = await Promise.all([
-        getTransactions({ limit: 500 }), // Load last 500 txs for quick client-side filtering
+        getTransactions({ limit: 500 }),
         getWallets()
     ])
 
@@ -22,9 +23,18 @@ export default async function TransactionsPage() {
 
     return (
         <div className="p-4 md:p-8 max-w-4xl mx-auto pb-24 md:pb-8">
-            <div className="mb-6">
-                <h1 className="text-3xl font-bold tracking-tight text-[var(--color-brand-navy)] dark:text-white">Transactions</h1>
-                <p className="text-gray-500 mt-1">View and manage your entire financial history.</p>
+            <div className="mb-6 flex items-center justify-between">
+                <div>
+                    <h1 className="text-3xl font-bold tracking-tight text-[var(--color-brand-navy)] dark:text-white">Transactions</h1>
+                    <p className="text-gray-500 mt-1">View and manage your entire financial history.</p>
+                </div>
+                <Link
+                    href="/import"
+                    className="flex items-center gap-2 px-4 py-2.5 bg-purple-50 dark:bg-purple-900/20 text-purple-700 dark:text-purple-300 rounded-xl hover:bg-purple-100 dark:hover:bg-purple-900/40 transition-colors text-sm font-medium"
+                >
+                    <Upload size={16} />
+                    Import
+                </Link>
             </div>
 
             <TransactionList
@@ -34,3 +44,4 @@ export default async function TransactionsPage() {
         </div>
     )
 }
+
