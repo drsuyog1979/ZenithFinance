@@ -11,12 +11,12 @@ export default function AppLayout({ children }: { children: ReactNode }) {
       </div>
 
       {/* Main Content Area */}
-      <main className="flex-1 overflow-y-auto pb-16 md:pb-0 relative">
+      <main className="flex-1 overflow-y-auto pb-20 md:pb-0 relative">
         {children}
       </main>
 
       {/* Mobile Bottom Navigation */}
-      <div className="md:hidden fixed bottom-0 left-0 right-0 h-16 bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-800 z-50">
+      <div className="md:hidden fixed bottom-0 left-0 right-0 h-20 bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-800 z-50">
         <BottomNav />
       </div>
     </div>
