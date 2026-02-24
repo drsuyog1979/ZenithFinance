@@ -35,6 +35,7 @@ export default function LoginPage() {
     const [isGoogleLoading, setIsGoogleLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [successMessage, setSuccessMessage] = useState<string | null>(null);
+    const [isEmailSent, setIsEmailSent] = useState(false);
 
     const anyLoading = isLoading || isGitHubLoading || isGoogleLoading;
 
@@ -88,7 +89,8 @@ export default function LoginPage() {
         if (result?.error) {
             setError(result.error);
         } else if (result?.success) {
-            setSuccessMessage(result.message ?? "Account created!");
+            setIsEmailSent(true);
+            setSuccessMessage(result.message ?? "Verification email sent!");
         }
     }
 
@@ -130,268 +132,289 @@ export default function LoginPage() {
             <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
                 <div className="bg-white dark:bg-gray-900 py-8 px-4 shadow sm:rounded-2xl sm:px-10 border border-gray-100 dark:border-gray-800">
 
-                    {/* Sign In / Sign Up Tab Toggle */}
-                    {mode !== "otp" && (
-                        <div className="flex bg-gray-100 dark:bg-gray-800 rounded-xl p-1 mb-6">
-                            <button
-                                type="button"
-                                onClick={() => switchMode("signin")}
-                                className={`flex-1 py-2 text-sm font-medium rounded-lg transition-all ${mode === "signin"
-                                    ? "bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm"
-                                    : "text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200"
-                                    }`}
-                            >
-                                Sign In
-                            </button>
-                            <button
-                                type="button"
-                                onClick={() => switchMode("signup")}
-                                className={`flex-1 py-2 text-sm font-medium rounded-lg transition-all ${mode === "signup"
-                                    ? "bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm"
-                                    : "text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200"
-                                    }`}
-                            >
-                                Sign Up
-                            </button>
-                        </div>
-                    )}
-
-                    {/* Feedback messages */}
-                    {error && (
-                        <div className="mb-4 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 p-3 rounded-lg text-sm border border-red-200 dark:border-red-800/30">
-                            {error}
-                        </div>
-                    )}
-                    {successMessage && (
-                        <div className="mb-4 bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400 p-3 rounded-lg text-sm border border-green-200 dark:border-green-800/30">
-                            {successMessage}
-                        </div>
-                    )}
-
-                    {/* ── OTP Verify Step ── */}
-                    {mode === "otp" ? (
-                        <form onSubmit={handleVerifyOTP} className="space-y-6">
-                            <input type="hidden" name="email" value={email} />
-                            <div>
-                                <label htmlFor="token" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                                    One-Time Password
-                                </label>
-                                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 mb-3">
-                                    {email ? `We sent a 6-digit code to ${email}` : "Enter your 6-digit code"}
-                                </p>
-                                <input
-                                    id="token"
-                                    name="token"
-                                    type="text"
-                                    required
-                                    autoComplete="one-time-code"
-                                    className="block w-full text-center tracking-widest text-2xl border border-gray-300 dark:border-gray-700 rounded-xl bg-gray-50 dark:bg-gray-800 py-4 transition-colors font-mono focus:outline-none focus:ring-2 focus:ring-[var(--color-brand-navy)]"
-                                    placeholder="000000"
-                                    maxLength={6}
-                                />
+                    {isEmailSent ? (
+                        <div className="text-center py-6">
+                            <div className="mx-auto flex items-center justify-center h-16 w-16 rounded-full bg-green-100 dark:bg-green-900/30 mb-6">
+                                <Mail className="h-8 w-8 text-green-600 dark:text-green-400" />
                             </div>
+                            <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">Check your email</h3>
+                            <p className="text-gray-600 dark:text-gray-400 mb-8">
+                                We've sent a verification link to <span className="font-semibold text-gray-900 dark:text-white">{email}</span>.
+                                Please click the link to confirm your account.
+                            </p>
                             <button
-                                type="submit"
-                                disabled={isLoading}
-                                className="w-full flex justify-center py-3 px-4 rounded-xl text-sm font-medium text-white bg-[var(--color-brand-navy)] hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                                onClick={() => { setIsEmailSent(false); setMode("signin"); setSuccessMessage(null); }}
+                                className="w-full flex justify-center py-3 px-4 rounded-xl text-sm font-medium text-white bg-[var(--color-brand-navy)] hover:opacity-90 transition-all font-semibold"
                             >
-                                {isLoading ? <Loader2 className="animate-spin h-5 w-5" /> : "Verify & Sign In"}
+                                Back to Sign In
                             </button>
-                            <button type="button" onClick={() => setMode("signin")} className="w-full text-sm text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white text-center">
-                                ← Back to Sign In
-                            </button>
-                        </form>
+                        </div>
                     ) : (
                         <>
-                            {/* ── OAuth Buttons ── */}
-                            <div className="grid grid-cols-2 gap-3 mb-6">
-                                <button
-                                    type="button"
-                                    onClick={handleGoogleSignIn}
-                                    disabled={anyLoading}
-                                    className="flex items-center justify-center gap-2 py-3 px-4 border border-gray-300 dark:border-gray-700 rounded-xl text-sm font-medium text-gray-900 dark:text-white bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                                >
-                                    {isGoogleLoading ? <Loader2 className="animate-spin h-4 w-4" /> : <GoogleIcon />}
-                                    Google
-                                </button>
-                                <button
-                                    type="button"
-                                    onClick={handleGitHubSignIn}
-                                    disabled={anyLoading}
-                                    className="flex items-center justify-center gap-2 py-3 px-4 border border-gray-300 dark:border-gray-700 rounded-xl text-sm font-medium text-gray-900 dark:text-white bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                                >
-                                    {isGitHubLoading ? <Loader2 className="animate-spin h-4 w-4" /> : <GitHubIcon />}
-                                    GitHub
-                                </button>
-                            </div>
-
-                            {/* Divider */}
-                            <div className="relative mb-6">
-                                <div className="absolute inset-0 flex items-center">
-                                    <div className="w-full border-t border-gray-200 dark:border-gray-700" />
-                                </div>
-                                <div className="relative flex justify-center text-sm">
-                                    <span className="px-2 bg-white dark:bg-gray-900 text-gray-500">or continue with email</span>
-                                </div>
-                            </div>
-
-                            {/* ── Sign In Form ── */}
-                            {mode === "signin" && (
-                                <form onSubmit={handleSignIn} className="space-y-4">
-                                    <div>
-                                        <label htmlFor="email" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                                            Email address
-                                        </label>
-                                        <div className="relative">
-                                            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                                <Mail className="h-5 w-5 text-gray-400" />
-                                            </div>
-                                            <input
-                                                id="email"
-                                                name="email"
-                                                type="email"
-                                                autoComplete="email"
-                                                required
-                                                value={email}
-                                                onChange={(e) => setEmail(e.target.value)}
-                                                className="block w-full pl-10 pr-4 py-3 sm:text-sm border border-gray-300 dark:border-gray-700 rounded-xl bg-gray-50 dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-[var(--color-brand-navy)] transition-colors"
-                                                placeholder="you@example.com"
-                                            />
-                                        </div>
-                                    </div>
-                                    <div>
-                                        <label htmlFor="password" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                                            Password
-                                        </label>
-                                        <div className="relative">
-                                            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                                <Lock className="h-5 w-5 text-gray-400" />
-                                            </div>
-                                            <input
-                                                id="password"
-                                                name="password"
-                                                type={showPassword ? "text" : "password"}
-                                                autoComplete="current-password"
-                                                required
-                                                value={password}
-                                                onChange={(e) => setPassword(e.target.value)}
-                                                className="block w-full pl-10 pr-10 py-3 sm:text-sm border border-gray-300 dark:border-gray-700 rounded-xl bg-gray-50 dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-[var(--color-brand-navy)] transition-colors"
-                                                placeholder="••••••••"
-                                            />
-                                            <button
-                                                type="button"
-                                                onClick={() => setShowPassword(!showPassword)}
-                                                className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600"
-                                            >
-                                                {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
-                                            </button>
-                                        </div>
-                                    </div>
+                            {/* Sign In / Sign Up Tab Toggle */}
+                            {mode !== "otp" && (
+                                <div className="flex bg-gray-100 dark:bg-gray-800 rounded-xl p-1 mb-6">
                                     <button
-                                        type="submit"
-                                        disabled={anyLoading}
-                                        className="w-full flex justify-center items-center gap-2 py-3 px-4 rounded-xl text-sm font-medium text-white bg-[var(--color-brand-navy)] hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed transition-all mt-2"
+                                        type="button"
+                                        onClick={() => switchMode("signin")}
+                                        className={`flex-1 py-2 text-sm font-medium rounded-lg transition-all ${mode === "signin"
+                                            ? "bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm"
+                                            : "text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200"
+                                            }`}
                                     >
-                                        {isLoading ? <Loader2 className="animate-spin h-5 w-5" /> : <><span>Sign In</span><ArrowRight className="h-4 w-4" /></>}
+                                        Sign In
                                     </button>
                                     <button
                                         type="button"
-                                        onClick={() => { setMode("otp"); setError(null); }}
-                                        className="w-full text-center text-sm text-[var(--color-brand-navy)] hover:opacity-80 font-medium transition-colors"
+                                        onClick={() => switchMode("signup")}
+                                        className={`flex-1 py-2 text-sm font-medium rounded-lg transition-all ${mode === "signup"
+                                            ? "bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm"
+                                            : "text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200"
+                                            }`}
                                     >
-                                        Sign in with email OTP instead
+                                        Sign Up
                                     </button>
-                                </form>
+                                </div>
                             )}
 
-                            {/* ── Sign Up Form ── */}
-                            {mode === "signup" && (
-                                <form onSubmit={handleSignUp} className="space-y-4">
+                            {/* Feedback messages */}
+                            {error && (
+                                <div className="mb-4 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 p-3 rounded-lg text-sm border border-red-200 dark:border-red-800/30">
+                                    {error}
+                                </div>
+                            )}
+                            {successMessage && (
+                                <div className="mb-4 bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400 p-3 rounded-lg text-sm border border-green-200 dark:border-green-800/30">
+                                    {successMessage}
+                                </div>
+                            )}
+
+                            {/* ── OTP Verify Step ── */}
+                            {mode === "otp" ? (
+                                <form onSubmit={handleVerifyOTP} className="space-y-6">
+                                    <input type="hidden" name="email" value={email} />
                                     <div>
-                                        <label htmlFor="signup-email" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                                            Email address
+                                        <label htmlFor="token" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                                            One-Time Password
                                         </label>
-                                        <div className="relative">
-                                            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                                <Mail className="h-5 w-5 text-gray-400" />
-                                            </div>
-                                            <input
-                                                id="signup-email"
-                                                name="email"
-                                                type="email"
-                                                autoComplete="email"
-                                                required
-                                                value={email}
-                                                onChange={(e) => setEmail(e.target.value)}
-                                                className="block w-full pl-10 pr-4 py-3 sm:text-sm border border-gray-300 dark:border-gray-700 rounded-xl bg-gray-50 dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-[var(--color-brand-navy)] transition-colors"
-                                                placeholder="you@example.com"
-                                            />
-                                        </div>
-                                    </div>
-                                    <div>
-                                        <label htmlFor="signup-password" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                                            Password
-                                        </label>
-                                        <div className="relative">
-                                            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                                <Lock className="h-5 w-5 text-gray-400" />
-                                            </div>
-                                            <input
-                                                id="signup-password"
-                                                name="password"
-                                                type={showPassword ? "text" : "password"}
-                                                autoComplete="new-password"
-                                                required
-                                                value={password}
-                                                onChange={(e) => setPassword(e.target.value)}
-                                                className="block w-full pl-10 pr-10 py-3 sm:text-sm border border-gray-300 dark:border-gray-700 rounded-xl bg-gray-50 dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-[var(--color-brand-navy)] transition-colors"
-                                                placeholder="Min. 6 characters"
-                                            />
-                                            <button
-                                                type="button"
-                                                onClick={() => setShowPassword(!showPassword)}
-                                                className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600"
-                                            >
-                                                {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
-                                            </button>
-                                        </div>
-                                    </div>
-                                    <div>
-                                        <label htmlFor="confirm-password" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                                            Confirm Password
-                                        </label>
-                                        <div className="relative">
-                                            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                                <Lock className="h-5 w-5 text-gray-400" />
-                                            </div>
-                                            <input
-                                                id="confirm-password"
-                                                name="confirm-password"
-                                                type={showConfirmPassword ? "text" : "password"}
-                                                autoComplete="new-password"
-                                                required
-                                                value={confirmPassword}
-                                                onChange={(e) => setConfirmPassword(e.target.value)}
-                                                className="block w-full pl-10 pr-10 py-3 sm:text-sm border border-gray-300 dark:border-gray-700 rounded-xl bg-gray-50 dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-[var(--color-brand-navy)] transition-colors"
-                                                placeholder="Re-enter password"
-                                            />
-                                            <button
-                                                type="button"
-                                                onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                                                className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600"
-                                            >
-                                                {showConfirmPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
-                                            </button>
-                                        </div>
+                                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 mb-3">
+                                            {email ? `We sent a 6-digit code to ${email}` : "Enter your 6-digit code"}
+                                        </p>
+                                        <input
+                                            id="token"
+                                            name="token"
+                                            type="text"
+                                            required
+                                            autoComplete="one-time-code"
+                                            className="block w-full text-center tracking-widest text-2xl border border-gray-300 dark:border-gray-700 rounded-xl bg-gray-50 dark:bg-gray-800 py-4 transition-colors font-mono focus:outline-none focus:ring-2 focus:ring-[var(--color-brand-navy)]"
+                                            placeholder="000000"
+                                            maxLength={6}
+                                        />
                                     </div>
                                     <button
                                         type="submit"
-                                        disabled={anyLoading}
-                                        className="w-full flex justify-center items-center gap-2 py-3 px-4 rounded-xl text-sm font-medium text-white bg-[var(--color-brand-navy)] hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed transition-all mt-2"
+                                        disabled={isLoading}
+                                        className="w-full flex justify-center py-3 px-4 rounded-xl text-sm font-medium text-white bg-[var(--color-brand-navy)] hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
                                     >
-                                        {isLoading ? <Loader2 className="animate-spin h-5 w-5" /> : <><span>Create Account</span><ArrowRight className="h-4 w-4" /></>}
+                                        {isLoading ? <Loader2 className="animate-spin h-5 w-5" /> : "Verify & Sign In"}
+                                    </button>
+                                    <button type="button" onClick={() => setMode("signin")} className="w-full text-sm text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white text-center">
+                                        ← Back to Sign In
                                     </button>
                                 </form>
+                            ) : (
+                                <>
+                                    {/* ── OAuth Buttons ── */}
+                                    <div className="grid grid-cols-2 gap-3 mb-6">
+                                        <button
+                                            type="button"
+                                            onClick={handleGoogleSignIn}
+                                            disabled={anyLoading}
+                                            className="flex items-center justify-center gap-2 py-3 px-4 border border-gray-300 dark:border-gray-700 rounded-xl text-sm font-medium text-gray-900 dark:text-white bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                                        >
+                                            {isGoogleLoading ? <Loader2 className="animate-spin h-4 w-4" /> : <GoogleIcon />}
+                                            Google
+                                        </button>
+                                        <button
+                                            type="button"
+                                            onClick={handleGitHubSignIn}
+                                            disabled={anyLoading}
+                                            className="flex items-center justify-center gap-2 py-3 px-4 border border-gray-300 dark:border-gray-700 rounded-xl text-sm font-medium text-gray-900 dark:text-white bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                                        >
+                                            {isGitHubLoading ? <Loader2 className="animate-spin h-4 w-4" /> : <GitHubIcon />}
+                                            GitHub
+                                        </button>
+                                    </div>
+
+                                    {/* Divider */}
+                                    <div className="relative mb-6">
+                                        <div className="absolute inset-0 flex items-center">
+                                            <div className="w-full border-t border-gray-200 dark:border-gray-700" />
+                                        </div>
+                                        <div className="relative flex justify-center text-sm">
+                                            <span className="px-2 bg-white dark:bg-gray-900 text-gray-500">or continue with email</span>
+                                        </div>
+                                    </div>
+
+                                    {/* ── Sign In Form ── */}
+                                    {mode === "signin" && (
+                                        <form onSubmit={handleSignIn} className="space-y-4">
+                                            <div>
+                                                <label htmlFor="email" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                                    Email address
+                                                </label>
+                                                <div className="relative">
+                                                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                                        <Mail className="h-5 w-5 text-gray-400" />
+                                                    </div>
+                                                    <input
+                                                        id="email"
+                                                        name="email"
+                                                        type="email"
+                                                        autoComplete="email"
+                                                        required
+                                                        value={email}
+                                                        onChange={(e) => setEmail(e.target.value)}
+                                                        className="block w-full pl-10 pr-4 py-3 sm:text-sm border border-gray-300 dark:border-gray-700 rounded-xl bg-gray-50 dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-[var(--color-brand-navy)] transition-colors"
+                                                        placeholder="you@example.com"
+                                                    />
+                                                </div>
+                                            </div>
+                                            <div>
+                                                <label htmlFor="password" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                                    Password
+                                                </label>
+                                                <div className="relative">
+                                                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                                        <Lock className="h-5 w-5 text-gray-400" />
+                                                    </div>
+                                                    <input
+                                                        id="password"
+                                                        name="password"
+                                                        type={showPassword ? "text" : "password"}
+                                                        autoComplete="current-password"
+                                                        required
+                                                        value={password}
+                                                        onChange={(e) => setPassword(e.target.value)}
+                                                        className="block w-full pl-10 pr-10 py-3 sm:text-sm border border-gray-300 dark:border-gray-700 rounded-xl bg-gray-50 dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-[var(--color-brand-navy)] transition-colors"
+                                                        placeholder="••••••••"
+                                                    />
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => setShowPassword(!showPassword)}
+                                                        className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600"
+                                                    >
+                                                        {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                                                    </button>
+                                                </div>
+                                            </div>
+                                            <button
+                                                type="submit"
+                                                disabled={anyLoading}
+                                                className="w-full flex justify-center items-center gap-2 py-3 px-4 rounded-xl text-sm font-medium text-white bg-[var(--color-brand-navy)] hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed transition-all mt-2"
+                                            >
+                                                {isLoading ? <Loader2 className="animate-spin h-5 w-5" /> : <><span>Sign In</span><ArrowRight className="h-4 w-4" /></>}
+                                            </button>
+                                            <button
+                                                type="button"
+                                                onClick={() => { setMode("otp"); setError(null); }}
+                                                className="w-full text-center text-sm text-[var(--color-brand-navy)] hover:opacity-80 font-medium transition-colors"
+                                            >
+                                                Sign in with email OTP instead
+                                            </button>
+                                        </form>
+                                    )}
+
+                                    {/* ── Sign Up Form ── */}
+                                    {mode === "signup" && (
+                                        <form onSubmit={handleSignUp} className="space-y-4">
+                                            <div>
+                                                <label htmlFor="signup-email" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                                    Email address
+                                                </label>
+                                                <div className="relative">
+                                                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                                        <Mail className="h-5 w-5 text-gray-400" />
+                                                    </div>
+                                                    <input
+                                                        id="signup-email"
+                                                        name="email"
+                                                        type="email"
+                                                        autoComplete="email"
+                                                        required
+                                                        value={email}
+                                                        onChange={(e) => setEmail(e.target.value)}
+                                                        className="block w-full pl-10 pr-4 py-3 sm:text-sm border border-gray-300 dark:border-gray-700 rounded-xl bg-gray-50 dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-[var(--color-brand-navy)] transition-colors"
+                                                        placeholder="you@example.com"
+                                                    />
+                                                </div>
+                                            </div>
+                                            <div>
+                                                <label htmlFor="signup-password" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                                    Password
+                                                </label>
+                                                <div className="relative">
+                                                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                                        <Lock className="h-5 w-5 text-gray-400" />
+                                                    </div>
+                                                    <input
+                                                        id="signup-password"
+                                                        name="password"
+                                                        type={showPassword ? "text" : "password"}
+                                                        autoComplete="new-password"
+                                                        required
+                                                        value={password}
+                                                        onChange={(e) => setPassword(e.target.value)}
+                                                        className="block w-full pl-10 pr-10 py-3 sm:text-sm border border-gray-300 dark:border-gray-700 rounded-xl bg-gray-50 dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-[var(--color-brand-navy)] transition-colors"
+                                                        placeholder="Min. 6 characters"
+                                                    />
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => setShowPassword(!showPassword)}
+                                                        className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600"
+                                                    >
+                                                        {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                                                    </button>
+                                                </div>
+                                            </div>
+                                            <div>
+                                                <label htmlFor="confirm-password" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                                    Confirm Password
+                                                </label>
+                                                <div className="relative">
+                                                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                                        <Lock className="h-5 w-5 text-gray-400" />
+                                                    </div>
+                                                    <input
+                                                        id="confirm-password"
+                                                        name="confirm-password"
+                                                        type={showConfirmPassword ? "text" : "password"}
+                                                        autoComplete="new-password"
+                                                        required
+                                                        value={confirmPassword}
+                                                        onChange={(e) => setConfirmPassword(e.target.value)}
+                                                        className="block w-full pl-10 pr-10 py-3 sm:text-sm border border-gray-300 dark:border-gray-700 rounded-xl bg-gray-50 dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-[var(--color-brand-navy)] transition-colors"
+                                                        placeholder="Re-enter password"
+                                                    />
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                                                        className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600"
+                                                    >
+                                                        {showConfirmPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                                                    </button>
+                                                </div>
+                                            </div>
+                                            <button
+                                                type="submit"
+                                                disabled={anyLoading}
+                                                className="w-full flex justify-center items-center gap-2 py-3 px-4 rounded-xl text-sm font-medium text-white bg-[var(--color-brand-navy)] hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed transition-all mt-2"
+                                            >
+                                                {isLoading ? <Loader2 className="animate-spin h-5 w-5" /> : <><span>Create Account</span><ArrowRight className="h-4 w-4" /></>}
+                                            </button>
+                                        </form>
+                                    )}
+                                </>
                             )}
                         </>
                     )}

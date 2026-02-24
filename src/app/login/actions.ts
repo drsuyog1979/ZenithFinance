@@ -49,12 +49,14 @@ export async function signInWithGoogle() {
 export async function sendOTP(formData: FormData) {
     const email = formData.get("email") as string;
     const supabase = await createClient();
+    const headersList = await headers();
+    const origin = headersList.get("origin") || process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
 
     const { error } = await supabase.auth.signInWithOtp({
         email,
         options: {
             shouldCreateUser: true,
-            emailRedirectTo: `${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/auth/callback`,
+            emailRedirectTo: `${origin}/auth/callback`,
         },
     });
 
@@ -92,6 +94,12 @@ export async function signInWithPassword(formData: FormData) {
     const { data: { user }, error } = await supabase.auth.signInWithPassword({ email, password });
 
     if (error) {
+        if (error.message === "Invalid login credentials") {
+            return { error: "Invalid email or password. Please check your credentials and try again." };
+        }
+        if (error.message === "Email not confirmed") {
+            return { error: "Please confirm your email address before signing in. Check your inbox for the link." };
+        }
         return { error: error.message };
     }
 
@@ -114,16 +122,21 @@ export async function signUpWithPassword(formData: FormData) {
     const email = formData.get("email") as string;
     const password = formData.get("password") as string;
     const supabase = await createClient();
+    const headersList = await headers();
+    const origin = headersList.get("origin") || process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
 
     const { data: { user }, error } = await supabase.auth.signUp({
         email,
         password,
         options: {
-            emailRedirectTo: `${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/auth/callback`,
+            emailRedirectTo: `${origin}/auth/callback`,
         },
     });
 
     if (error) {
+        if (error.message === "User already registered") {
+            return { error: "An account with this email already exists. Try signing in instead." };
+        }
         return { error: error.message };
     }
 
