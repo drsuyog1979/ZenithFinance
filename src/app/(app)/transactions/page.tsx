@@ -1,13 +1,16 @@
 import { getTransactions } from "@/app/actions/transactions"
 import { getWallets } from "@/app/actions/wallets"
 import { TransactionList } from "@/components/transactions/TransactionList"
-import { AlertCircle, Upload, Loader2 } from "lucide-react"
+import { AlertCircle, Upload } from "lucide-react"
 import Link from "next/link"
-import { Suspense } from "react"
 
 export const dynamic = "force-dynamic"
 
-export default async function TransactionsPage() {
+export default async function TransactionsPage({
+    searchParams
+}: {
+    searchParams: { type?: string }
+}) {
     const [txRes, walletRes] = await Promise.all([
         getTransactions({ limit: 500 }),
         getWallets()
@@ -21,6 +24,11 @@ export default async function TransactionsPage() {
             </div>
         )
     }
+
+    const validTypes = ["INCOME", "EXPENSE", "INVESTMENT", "TRANSFER"];
+    const initialTypeFilter = searchParams.type && validTypes.includes(searchParams.type)
+        ? searchParams.type
+        : "ALL";
 
     return (
         <div className="p-4 md:p-8 max-w-4xl mx-auto pb-24 md:pb-8">
@@ -38,12 +46,11 @@ export default async function TransactionsPage() {
                 </Link>
             </div>
 
-            <Suspense fallback={<div className="flex justify-center py-12"><Loader2 className="animate-spin w-8 h-8 text-gray-400" /></div>}>
-                <TransactionList
-                    initialTransactions={txRes.data || []}
-                    wallets={walletRes.data || []}
-                />
-            </Suspense>
+            <TransactionList
+                initialTransactions={txRes.data || []}
+                wallets={walletRes.data || []}
+                initialTypeFilter={initialTypeFilter}
+            />
         </div>
     )
 }

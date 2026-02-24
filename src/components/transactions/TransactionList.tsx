@@ -1,7 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { useSearchParams } from "next/navigation";
+import { useState } from "react";
 import { format } from "date-fns";
 import {
     ShoppingBag, Utensils, Car, HeartPulse, Home, Zap, Tv, Briefcase,
@@ -11,25 +10,18 @@ import { deleteTransaction } from "@/app/actions/transactions";
 
 export function TransactionList({
     initialTransactions,
-    wallets
+    wallets,
+    initialTypeFilter = "ALL"
 }: {
     initialTransactions: any[],
-    wallets: any[]
+    wallets: any[],
+    initialTypeFilter?: string
 }) {
-    const searchParams = useSearchParams();
     const [transactions, setTransactions] = useState(initialTransactions);
     const [search, setSearch] = useState("");
-    const [typeFilter, setTypeFilter] = useState("ALL");
+    const [typeFilter, setTypeFilter] = useState(initialTypeFilter);
     const [walletFilter, setWalletFilter] = useState("ALL");
     const [deletingId, setDeletingId] = useState<string | null>(null);
-
-    // Pre-filter from URL param e.g. /transactions?type=INCOME
-    useEffect(() => {
-        const t = searchParams.get("type");
-        if (t && ["INCOME", "EXPENSE", "INVESTMENT", "TRANSFER"].includes(t)) {
-            setTypeFilter(t);
-        }
-    }, [searchParams]);
 
     const formatINR = (value: number) => {
         return new Intl.NumberFormat('en-IN', {

@@ -35,38 +35,60 @@ async function getUserAndEnsureExists() {
 
 // ── Category normalisation map (Spendee → Zenith) ──────────────────────────
 const CATEGORY_MAP: Record<string, string> = {
+    // Food
     "food & drinks": "Food & Dining",
     "food & dining": "Food & Dining",
+    "food & drink": "Food & Dining",
     "food": "Food & Dining",
     "restaurants": "Food & Dining",
     "groceries": "Food & Dining",
+    // Transport
     "transport": "Transport",
     "transportation": "Transport",
     "taxi": "Transport",
     "travel": "Transport",
+    "petrol": "Transport",
+    "fuel": "Transport",
+    // Shopping
     "shopping": "Shopping",
     "clothes": "Shopping",
     "electronics": "Shopping",
+    "app purchase": "Entertainment",
+    "app purchase ": "Entertainment",
+    // Housing
     "housing": "Housing",
     "rent": "Housing",
     "home": "Housing",
+    // Utilities
     "bills & utilities": "Utilities",
     "utilities": "Utilities",
     "bills": "Utilities",
+    "electricity bill": "Utilities",
+    "mngl": "Utilities",
+    "vi": "Utilities",
+    "landline": "Utilities",
+    "gas": "Utilities",
+    // Health
     "health": "Health",
     "healthcare": "Health",
     "medical": "Health",
     "pharmacy": "Health",
-    "entertainment": "Entertainment",
-    "movies": "Entertainment",
-    "sports": "Entertainment",
-    "income": "Income",
-    "salary": "Income",
-    "wages": "Income",
-    "freelance": "Income",
+    // Investment
     "investment": "Investment",
     "investments": "Investment",
     "savings": "Investment",
+    "mutual funds": "Investment",
+    "stocks": "Investment",
+    // Entertainment
+    "entertainment": "Entertainment",
+    "movies": "Entertainment",
+    "sports": "Entertainment",
+    "subscriptions": "Entertainment",
+    // Income
+    "income": "Income",
+    "wages": "Income",
+    "freelance": "Income",
+    // Transfer / Other
     "transfer": "Transfer",
     "transfers": "Transfer",
     "education": "Education",
@@ -76,10 +98,10 @@ const CATEGORY_MAP: Record<string, string> = {
     "donations": "Gifts",
     "insurance": "Insurance",
     "taxes": "Taxes",
-    "subscriptions": "Entertainment",
-    "business": "Income",
     "other": "Other",
     "others": "Other",
+    // Salary paid as expense (e.g. paying staff)
+    "salary": "Salary",
 };
 
 function normaliseCategory(raw: string): string {
@@ -120,23 +142,25 @@ export async function parseSpendeeCSV(csvText: string): Promise<ParseResult> {
         if (lines.length < 2) return { rows: [], walletNames: [], categories: [], dateRange: null, error: "File appears empty." };
 
         // Detect header — be tolerant of BOM and casing
-        const header = lines[0].replace(/^\uFEFF/, "").split(",").map(h => h.trim().replace(/^"|"$/g, "").toLowerCase());
+        const rawHeader = lines[0].replace(/^\uFEFF/, "");
+        const header = parseCSVLine(rawHeader).map(h => h.toLowerCase().trim());
 
-        const col = (name: string) => {
-            const i = header.findIndex(h => h.includes(name));
-            return i;
-        };
+        const col = (name: string) => header.findIndex(h => h === name || h.includes(name));
 
         const dateIdx = col("date");
         const catIdx = col("category");
         const amtIdx = col("amount");
         const currIdx = col("currency");
         const noteIdx = col("note");
-        const walletIdx = header.findIndex(h => h === "wallet" || h.includes("wallet name") || h.includes("wallet_name") || h === "account");
         const typeIdx = col("type");
+        // 'labels' column is used for wallet in the Accounts CSV export format
+        const labelsIdx = header.findIndex(h => h === "labels");
+        const walletIdx = header.findIndex(h => h === "wallet" || h.includes("wallet name") || h === "account");
+        // Use labelsIdx preferentially if it exists; fall back to walletIdx
+        const isAccountsFormat = labelsIdx >= 0;
 
         if (dateIdx < 0 || amtIdx < 0) {
-            return { rows: [], walletNames: [], categories: [], dateRange: null, error: "Could not find required columns (Date, Amount). Please make sure you exported from Spendee correctly." };
+            return { rows: [], walletNames: [], categories: [], dateRange: null, error: "Could not find required columns (Date, Amount). Please export from Spendee using Settings → Export Data." };
         }
 
         const rows: SpendeeRow[] = [];
@@ -149,7 +173,6 @@ export async function parseSpendeeCSV(csvText: string): Promise<ParseResult> {
             const line = lines[i];
             if (!line.trim()) continue;
 
-            // CSV-aware split (handles quoted fields with commas)
             const cols = parseCSVLine(line);
 
             const rawDate = cols[dateIdx]?.trim() || "";
@@ -157,8 +180,22 @@ export async function parseSpendeeCSV(csvText: string): Promise<ParseResult> {
             const rawCat = catIdx >= 0 ? cols[catIdx]?.trim() || "Other" : "Other";
             const rawCurr = currIdx >= 0 ? cols[currIdx]?.trim() || "INR" : "INR";
             const rawNote = noteIdx >= 0 ? cols[noteIdx]?.trim() || "" : "";
-            const rawWallet = walletIdx >= 0 ? cols[walletIdx]?.trim() || "Spendee Import" : "Spendee Import";
             const rawType = typeIdx >= 0 ? cols[typeIdx]?.trim() || "" : "";
+
+            // Wallet: use Labels column if present & non-empty; else Wallet column; else default
+            let rawWallet: string;
+            if (isAccountsFormat) {
+                const labelVal = cols[labelsIdx]?.trim() || "";
+                if (labelVal) {
+                    rawWallet = labelVal;
+                } else if (walletIdx >= 0) {
+                    rawWallet = cols[walletIdx]?.trim() || "Accounts";
+                } else {
+                    rawWallet = "Accounts";
+                }
+            } else {
+                rawWallet = walletIdx >= 0 ? cols[walletIdx]?.trim() || "Spendee Import" : "Spendee Import";
+            }
 
             if (!rawDate || rawDate.toLowerCase() === "date") continue;
 
@@ -169,6 +206,7 @@ export async function parseSpendeeCSV(csvText: string): Promise<ParseResult> {
             if (isNaN(amtFloat)) continue;
 
             const type = inferType(rawType, amtFloat);
+            // In Accounts format categories are custom — pass through unknown names as-is
             const category = normaliseCategory(rawCat);
             const amountPaise = Math.round(Math.abs(amtFloat) * 100);
 
@@ -215,13 +253,23 @@ function parseCSVLine(line: string): string[] {
 }
 
 function parseSpendeeDate(raw: string): Date | null {
-    // Spendee uses formats like "2024-01-15" or "15/01/2024" or "2024-01-15 10:30:00"
-    const cleaned = raw.trim().split(" ")[0]; // strip time if present
-    const d = new Date(cleaned);
+    // Handle ISO 8601 with timezone: "2026-01-21T02:29:01+00:00" → parse directly
+    // Handle date-only: "2024-01-15" or "15/01/2024" or "2024-01-15 10:30:00"
+    const cleaned = raw.trim();
+
+    // ISO 8601 with T and optional timezone — let JS parse natively
+    if (cleaned.includes("T")) {
+        const d = new Date(cleaned);
+        if (!isNaN(d.getTime())) return d;
+    }
+
+    // Strip time portion for plain datetime strings
+    const dateOnly = cleaned.split(" ")[0];
+    const d = new Date(dateOnly);
     if (!isNaN(d.getTime())) return d;
 
     // Try DD/MM/YYYY
-    const parts = cleaned.split(/[\/\-]/);
+    const parts = dateOnly.split(/[\/\-]/);
     if (parts.length === 3) {
         if (parts[0].length === 4) return new Date(`${parts[0]}-${parts[1]}-${parts[2]}`);
         return new Date(`${parts[2]}-${parts[1]}-${parts[0]}`);
