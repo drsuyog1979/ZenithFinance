@@ -26,22 +26,26 @@ export default async function AnalyticsPage() {
 
     const transactions = txRes.data || []
 
-    // 1. Bar Chart Data (6 months)
+    // 1. Bar Chart Data (6 months — income + expenses)
     const barData = []
     for (let i = 5; i >= 0; i--) {
         const d = subMonths(currentDate, i)
         const monthKey = format(d, "MMMM")
 
-        // Sum expenses for this month
-        const spent = transactions
-            .filter(tx =>
-                tx.type === "EXPENSE" &&
-                new Date(tx.date).getMonth() === d.getMonth() &&
-                new Date(tx.date).getFullYear() === d.getFullYear()
-            )
+        const monthTxs = transactions.filter(tx =>
+            new Date(tx.date).getMonth() === d.getMonth() &&
+            new Date(tx.date).getFullYear() === d.getFullYear()
+        )
+
+        const income = monthTxs
+            .filter(tx => tx.type === "INCOME")
             .reduce((sum, tx) => sum + tx.amount, 0)
 
-        barData.push({ month: monthKey, spent })
+        const expenses = monthTxs
+            .filter(tx => tx.type === "EXPENSE")
+            .reduce((sum, tx) => sum + tx.amount, 0)
+
+        barData.push({ month: monthKey, income, expenses })
     }
 
     // 2. Heatmap Data (Current Month)
@@ -101,8 +105,8 @@ export default async function AnalyticsPage() {
                 {/* 6-Month Bar Chart */}
                 <div className="bg-white dark:bg-gray-900 rounded-3xl p-6 shadow-sm border border-gray-100 dark:border-gray-800">
                     <div className="mb-6">
-                        <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-1">6-Month Spending</h2>
-                        <p className="text-xs text-gray-500 uppercase tracking-wider font-semibold">Expense Trend</p>
+                        <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-1">6-Month Overview</h2>
+                        <p className="text-xs text-gray-500 uppercase tracking-wider font-semibold">Income vs Expenses</p>
                     </div>
                     <BarChart data={barData} />
                 </div>

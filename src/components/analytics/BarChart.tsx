@@ -3,7 +3,7 @@
 import { BarChart as ReBarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts";
 
 interface BarChartProps {
-    data: { month: string; spent: number }[];
+    data: { month: string; income: number; expenses: number }[];
 }
 
 export function BarChart({ data }: BarChartProps) {
@@ -37,6 +37,7 @@ export function BarChart({ data }: BarChartProps) {
                         tickLine={false}
                         tick={{ fontSize: 12, fill: 'var(--color-gray-500)' }}
                         dy={10}
+                        tickFormatter={(val) => val.slice(0, 3)}
                     />
                     <YAxis
                         axisLine={false}
@@ -45,15 +46,36 @@ export function BarChart({ data }: BarChartProps) {
                         tickFormatter={(value) => formatINR(value)}
                     />
                     <Tooltip
-                        formatter={(value: any) => [formatFullINR(Number(value)), 'Spent']}
+                        formatter={(value: any, name: string) => [
+                            formatFullINR(Number(value)),
+                            name === 'income' ? 'Income' : 'Expenses'
+                        ]}
                         cursor={{ fill: 'var(--color-gray-100)', opacity: 0.5 }}
-                        contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
+                        contentStyle={{
+                            borderRadius: '12px',
+                            border: 'none',
+                            boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)',
+                            backgroundColor: 'white',
+                        }}
+                    />
+                    <Legend
+                        formatter={(value: string) => value === 'income' ? 'Income' : 'Expenses'}
+                        iconType="circle"
+                        iconSize={8}
+                        wrapperStyle={{ fontSize: '12px', paddingTop: '12px' }}
                     />
                     <Bar
-                        dataKey="spent"
-                        fill="var(--color-category-expense)"
+                        dataKey="income"
+                        fill="#22c55e"
                         radius={[6, 6, 0, 0]}
-                        maxBarSize={40}
+                        maxBarSize={32}
+                        animationDuration={1500}
+                    />
+                    <Bar
+                        dataKey="expenses"
+                        fill="#ef4444"
+                        radius={[6, 6, 0, 0]}
+                        maxBarSize={32}
                         animationDuration={1500}
                     />
                 </ReBarChart>
