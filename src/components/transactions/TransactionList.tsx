@@ -20,10 +20,10 @@ import { deleteTransaction, updateTransaction } from "@/app/actions/transactions
 
 // ── Default built-in categories ─────────────────────────────────────────────
 const DEFAULT_CATEGORIES = [
-    "Food & Dining", "Transport", "Shopping", "Housing", "Utilities",
-    "Health", "Entertainment", "Income", "Investment", "Transfer",
-    "Education", "Personal Care", "Gifts", "Insurance", "Taxes",
-    "Salary", "Other"
+    "Clinic", "Baramati", "Mutual Funds", "Petrol", "Salary",
+    "Food & Drink", "Electricity Bill", "App Purchase", "Apollo",
+    "Inamdar", "Sahyadri Deccan", "Sahyadri Bibwewadi",
+    "MNGL", "VI", "Landline", "Other"
 ];
 
 function loadCategories(): string[] {

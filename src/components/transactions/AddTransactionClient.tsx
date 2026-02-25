@@ -5,20 +5,28 @@ import { Numpad } from "@/components/transactions/Numpad";
 import { createTransaction } from "@/app/actions/transactions";
 import { useRouter } from "next/navigation";
 import {
-    ShoppingBag, Utensils, Car, HeartPulse, Home, Zap, Tv, Briefcase, ChevronLeft, Loader2
+    Utensils, Car, Zap, Tv, Briefcase, ChevronLeft, Loader2,
+    TrendingUp, Phone, Banknote, Tag
 } from "lucide-react";
 import Link from "next/link";
 import { TransactionType } from "@prisma/client";
 
 const CATEGORIES = [
-    { name: "Food & Dining", icon: Utensils, color: "#f97316" },
-    { name: "Transport", icon: Car, color: "#3b82f6" },
-    { name: "Shopping", icon: ShoppingBag, color: "#ec4899" },
-    { name: "Housing", icon: Home, color: "#8b5cf6" },
-    { name: "Utilities", icon: Zap, color: "#eab308" },
-    { name: "Health", icon: HeartPulse, color: "#10b981" },
-    { name: "Entertainment", icon: Tv, color: "#6366f1" },
-    { name: "Income", icon: Briefcase, color: "#22c55e" },
+    { name: "Clinic", icon: Briefcase, color: "#10b981" },
+    { name: "Baramati", icon: Briefcase, color: "#14b8a6" },
+    { name: "Mutual Funds", icon: TrendingUp, color: "#0ea5e9" },
+    { name: "Petrol", icon: Car, color: "#3b82f6" },
+    { name: "Salary", icon: Banknote, color: "#ef4444" },
+    { name: "Food & Drink", icon: Utensils, color: "#f97316" },
+    { name: "Electricity Bill", icon: Zap, color: "#eab308" },
+    { name: "App Purchase", icon: Tv, color: "#8b5cf6" },
+    { name: "Apollo", icon: Briefcase, color: "#06b6d4" },
+    { name: "Inamdar", icon: Briefcase, color: "#0891b2" },
+    { name: "MNGL", icon: Zap, color: "#f59e0b" },
+    { name: "VI", icon: Phone, color: "#a855f7" },
+    { name: "Landline", icon: Phone, color: "#d97706" },
+    { name: "Sahyadri Deccan", icon: Briefcase, color: "#2dd4bf" },
+    { name: "Sahyadri Bibwewadi", icon: Briefcase, color: "#34d399" },
 ];
 
 export function AddTransactionClient({ wallets }: { wallets: any[] }) {
@@ -84,10 +92,10 @@ export function AddTransactionClient({ wallets }: { wallets: any[] }) {
                             key={t}
                             onClick={() => setType(t)}
                             className={`px-4 py-1.5 rounded-lg text-sm font-medium capitalize transition-all duration-200 ${type === t
-                                    ? t === 'INCOME' ? 'bg-[var(--color-category-income)] text-white shadow-sm'
-                                        : t === 'EXPENSE' ? 'bg-[var(--color-category-expense)] text-white shadow-sm'
-                                            : 'bg-[var(--color-brand-navy)] text-white shadow-sm'
-                                    : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'
+                                ? t === 'INCOME' ? 'bg-[var(--color-category-income)] text-white shadow-sm'
+                                    : t === 'EXPENSE' ? 'bg-[var(--color-category-expense)] text-white shadow-sm'
+                                        : 'bg-[var(--color-brand-navy)] text-white shadow-sm'
+                                : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'
                                 }`}
                         >
                             {t.toLowerCase()}
@@ -119,8 +127,8 @@ export function AddTransactionClient({ wallets }: { wallets: any[] }) {
                                     key={cat.name}
                                     onClick={() => setCategory(cat.name)}
                                     className={`flex flex-col items-center gap-2 p-3 rounded-2xl border transition-all ${isSelected
-                                            ? 'border-transparent shadow-md transform scale-105'
-                                            : 'border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-900 hover:bg-gray-50 dark:hover:bg-gray-800'
+                                        ? 'border-transparent shadow-md transform scale-105'
+                                        : 'border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-900 hover:bg-gray-50 dark:hover:bg-gray-800'
                                         }`}
                                     style={isSelected ? { backgroundColor: cat.color, color: 'white' } : {}}
                                 >

@@ -3,22 +3,29 @@
 import { useState, useEffect } from "react";
 import {
     Moon, Sun, Monitor, Download, Cloud, Tag, IndianRupee, LogOut, ChevronRight,
-    ChevronDown, Loader2, Check, ShoppingBag, Utensils, Car, HeartPulse, Home,
-    Zap, Tv, Briefcase, X, Plus, Lock, Trash2
+    ChevronDown, Loader2, Check, Utensils, Car, Zap, Tv, Briefcase, X, Plus,
+    Lock, Trash2, TrendingUp, Phone, Banknote, Fuel
 } from "lucide-react";
 import { createClient } from "@/utils/supabase/client";
 import { useRouter } from "next/navigation";
 import { resetAllUserData } from "@/app/actions/import";
 
 const CATEGORIES = [
-    { name: "Food & Dining", color: "#f97316", icon: Utensils },
-    { name: "Transport", color: "#3b82f6", icon: Car },
-    { name: "Shopping", color: "#ec4899", icon: ShoppingBag },
-    { name: "Housing", color: "#8b5cf6", icon: Home },
-    { name: "Utilities", color: "#eab308", icon: Zap },
-    { name: "Health", color: "#10b981", icon: HeartPulse },
-    { name: "Entertainment", color: "#6366f1", icon: Tv },
-    { name: "Income", color: "#22c55e", icon: Briefcase },
+    { name: "Clinic", color: "#10b981", icon: Briefcase },
+    { name: "Baramati", color: "#14b8a6", icon: Briefcase },
+    { name: "Mutual Funds", color: "#0ea5e9", icon: TrendingUp },
+    { name: "Petrol", color: "#3b82f6", icon: Car },
+    { name: "Salary", color: "#ef4444", icon: Banknote },
+    { name: "Food & Drink", color: "#f97316", icon: Utensils },
+    { name: "Electricity Bill", color: "#eab308", icon: Zap },
+    { name: "App Purchase", color: "#8b5cf6", icon: Tv },
+    { name: "Apollo", color: "#06b6d4", icon: Briefcase },
+    { name: "Inamdar", color: "#0891b2", icon: Briefcase },
+    { name: "Sahyadri Deccan", color: "#2dd4bf", icon: Briefcase },
+    { name: "Sahyadri Bibwewadi", color: "#34d399", icon: Briefcase },
+    { name: "MNGL", color: "#f59e0b", icon: Zap },
+    { name: "VI", color: "#a855f7", icon: Phone },
+    { name: "Landline", color: "#d97706", icon: Phone },
 ];
 
 const CURRENCIES = [
