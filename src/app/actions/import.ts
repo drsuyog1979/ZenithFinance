@@ -33,80 +33,10 @@ async function getUserAndEnsureExists() {
     return user.id;
 }
 
-// ── Category normalisation map (Spendee → Zenith) ──────────────────────────
-const CATEGORY_MAP: Record<string, string> = {
-    // Food
-    "food & drinks": "Food & Dining",
-    "food & dining": "Food & Dining",
-    "food & drink": "Food & Dining",
-    "food": "Food & Dining",
-    "restaurants": "Food & Dining",
-    "groceries": "Food & Dining",
-    // Transport
-    "transport": "Transport",
-    "transportation": "Transport",
-    "taxi": "Transport",
-    "travel": "Transport",
-    "petrol": "Transport",
-    "fuel": "Transport",
-    // Shopping
-    "shopping": "Shopping",
-    "clothes": "Shopping",
-    "electronics": "Shopping",
-    "app purchase": "Entertainment",
-    "app purchase ": "Entertainment",
-    // Housing
-    "housing": "Housing",
-    "rent": "Housing",
-    "home": "Housing",
-    // Utilities
-    "bills & utilities": "Utilities",
-    "utilities": "Utilities",
-    "bills": "Utilities",
-    "electricity bill": "Utilities",
-    "mngl": "Utilities",
-    "vi": "Utilities",
-    "landline": "Utilities",
-    "gas": "Utilities",
-    // Health
-    "health": "Health",
-    "healthcare": "Health",
-    "medical": "Health",
-    "pharmacy": "Health",
-    // Investment
-    "investment": "Investment",
-    "investments": "Investment",
-    "savings": "Investment",
-    "mutual funds": "Investment",
-    "stocks": "Investment",
-    // Entertainment
-    "entertainment": "Entertainment",
-    "movies": "Entertainment",
-    "sports": "Entertainment",
-    "subscriptions": "Entertainment",
-    // Income
-    "income": "Income",
-    "wages": "Income",
-    "freelance": "Income",
-    // Transfer / Other
-    "transfer": "Transfer",
-    "transfers": "Transfer",
-    "education": "Education",
-    "personal care": "Personal Care",
-    "beauty": "Personal Care",
-    "gifts": "Gifts",
-    "donations": "Gifts",
-    "insurance": "Insurance",
-    "taxes": "Taxes",
-    "other": "Other",
-    "others": "Other",
-    // Salary paid as expense (e.g. paying staff)
-    "salary": "Salary",
-};
-
+// ── Category normalisation ──────────────────────────────────────────────────
 function normaliseCategory(raw: string): string {
-    const key = raw.trim().toLowerCase();
-    return CATEGORY_MAP[key] || raw.trim(); // keep original if no match
+    // Pass through the original category name from the CSV as-is
+    return raw.trim() || "Other";
 }
 
 // ── Type inference from Spendee's "Type" column + amount sign ──────────────
