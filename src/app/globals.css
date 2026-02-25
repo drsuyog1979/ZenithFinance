@@ -1,5 +1,8 @@
 @import "tailwindcss";
 
+/* Enable class-based dark mode: the Settings toggle adds/removes .dark on <html> */
+@custom-variant dark (&:where(.dark, .dark *));
+
 @theme {
   --color-brand-navy: #1a3c5e;
   --color-brand-navy-light: #2c5380;

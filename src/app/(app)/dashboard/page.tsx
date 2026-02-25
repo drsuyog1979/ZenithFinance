@@ -10,6 +10,7 @@ import { Loader2 } from "lucide-react";
 import Link from "next/link";
 
 const CATEGORY_COLORS: Record<string, string> = {
+    // Generic Zenith categories
     "Food & Dining": "#f97316",
     "Transport": "#3b82f6",
     "Shopping": "#ec4899",
@@ -26,10 +27,38 @@ const CATEGORY_COLORS: Record<string, string> = {
     "Taxes": "#64748b",
     "Transfer": "#71717a",
     "Other": "#ef4444",
+    // CSV-specific category names (Accounts app export)
+    "Mutual Funds": "#0ea5e9",
+    "Petrol": "#3b82f6",
+    "Electricity Bill": "#eab308",
+    "Food & Drink": "#f97316",
+    "App Purchase": "#8b5cf6",
+    "App Purchase ": "#8b5cf6",
+    "MNGL": "#f59e0b",
+    "VI": "#a855f7",
+    "Landline": "#d97706",
+    "Salary": "#ef4444",
+    "Clinic": "#10b981",
+    "Baramati": "#14b8a6",
+    "Apollo": "#06b6d4",
+    "Inamdar": "#0891b2",
+    "Sahyadri Deccan": "#2dd4bf",
+    "Sahyadri Bibwewadi": "#34d399",
+    "Food & Drinks": "#f97316",
 };
 
+// Deterministic color for unknown categories based on string hash
+function hashColor(str: string): string {
+    let hash = 0;
+    for (let i = 0; i < str.length; i++) {
+        hash = str.charCodeAt(i) + ((hash << 5) - hash);
+    }
+    const hue = Math.abs(hash) % 360;
+    return `hsl(${hue}, 65%, 55%)`;
+}
+
 function getColor(category: string) {
-    return CATEGORY_COLORS[category] || "#ef4444";
+    return CATEGORY_COLORS[category] || hashColor(category);
 }
 
 export default function DashboardPage() {
@@ -128,8 +157,8 @@ export default function DashboardPage() {
                                         <button
                                             onClick={() => setActiveChart("spending")}
                                             className={`px-4 py-1.5 rounded-lg text-sm font-medium transition-all ${activeChart === "spending"
-                                                    ? "bg-red-500 text-white shadow-sm"
-                                                    : "text-gray-500 hover:text-gray-800 dark:text-gray-400"
+                                                ? "bg-red-500 text-white shadow-sm"
+                                                : "text-gray-500 hover:text-gray-800 dark:text-gray-400"
                                                 }`}
                                         >
                                             Expenses
@@ -137,8 +166,8 @@ export default function DashboardPage() {
                                         <button
                                             onClick={() => setActiveChart("income")}
                                             className={`px-4 py-1.5 rounded-lg text-sm font-medium transition-all ${activeChart === "income"
-                                                    ? "bg-emerald-500 text-white shadow-sm"
-                                                    : "text-gray-500 hover:text-gray-800 dark:text-gray-400"
+                                                ? "bg-emerald-500 text-white shadow-sm"
+                                                : "text-gray-500 hover:text-gray-800 dark:text-gray-400"
                                                 }`}
                                         >
                                             Income

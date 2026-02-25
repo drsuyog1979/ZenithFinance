@@ -4,8 +4,18 @@ import { useState, useEffect } from "react";
 import { format } from "date-fns";
 import {
     ShoppingBag, Utensils, Car, HeartPulse, Home, Zap, Tv, Briefcase,
-    Search, Trash2, Edit2, Loader2, X, Check, Tag
+    Search, Trash2, Edit2, Loader2, X, Check, Tag, TrendingUp, Phone, Banknote
 } from "lucide-react";
+
+// Deterministic color for unknown categories
+function hashColor(str: string): string {
+    let hash = 0;
+    for (let i = 0; i < str.length; i++) {
+        hash = str.charCodeAt(i) + ((hash << 5) - hash);
+    }
+    const hue = Math.abs(hash) % 360;
+    return `hsl(${hue}, 65%, 55%)`;
+}
 import { deleteTransaction, updateTransaction } from "@/app/actions/transactions";
 
 // ── Default built-in categories ─────────────────────────────────────────────
@@ -63,29 +73,37 @@ export function TransactionList({
 
     const getIcon = (category: string) => {
         switch (category) {
-            case "Food & Dining": return Utensils;
-            case "Transport": return Car;
+            case "Food & Dining": case "Food & Drink": case "Food & Drinks": return Utensils;
+            case "Transport": case "Petrol": return Car;
             case "Health": return HeartPulse;
             case "Housing": return Home;
-            case "Utilities": return Zap;
-            case "Entertainment": return Tv;
+            case "Utilities": case "Electricity Bill": case "MNGL": return Zap;
+            case "Landline": case "VI": return Phone;
+            case "Entertainment": case "App Purchase": case "App Purchase ": return Tv;
             case "Shopping": return ShoppingBag;
-            case "Income": return Briefcase;
+            case "Income": case "Clinic": case "Baramati": case "Apollo": case "Inamdar":
+            case "Sahyadri Deccan": case "Sahyadri Bibwewadi": return Briefcase;
+            case "Mutual Funds": case "Investment": return TrendingUp;
+            case "Salary": return Banknote;
             default: return Tag;
         }
     };
 
     const getColor = (category: string) => {
-        switch (category) {
-            case "Food & Dining": return "var(--color-category-food)";
-            case "Transport": return "var(--color-category-transport)";
-            case "Shopping": return "var(--color-category-shopping)";
-            case "Utilities": return "var(--color-category-utilities)";
-            case "Health": return "var(--color-category-health)";
-            case "Entertainment": return "var(--color-category-entertainment)";
-            case "Income": return "var(--color-category-income)";
-            default: return "var(--color-category-expense)";
-        }
+        const map: Record<string, string> = {
+            "Food & Dining": "#f97316", "Food & Drink": "#f97316", "Food & Drinks": "#f97316",
+            "Transport": "#3b82f6", "Petrol": "#3b82f6",
+            "Shopping": "#ec4899",
+            "Utilities": "#eab308", "Electricity Bill": "#eab308", "MNGL": "#f59e0b",
+            "Health": "#10b981",
+            "Entertainment": "#8b5cf6", "App Purchase": "#8b5cf6", "App Purchase ": "#8b5cf6",
+            "Income": "#22c55e",
+            "Clinic": "#10b981", "Baramati": "#14b8a6", "Apollo": "#06b6d4",
+            "Inamdar": "#0891b2", "Sahyadri Deccan": "#2dd4bf", "Sahyadri Bibwewadi": "#34d399",
+            "Mutual Funds": "#0ea5e9", "Investment": "#0ea5e9",
+            "Salary": "#ef4444", "Landline": "#d97706", "VI": "#a855f7",
+        };
+        return map[category] || hashColor(category);
     };
 
     const handleDelete = async (id: string, e: React.MouseEvent) => {
@@ -238,11 +256,11 @@ export function TransactionList({
                                         key={t}
                                         onClick={() => setEditForm({ ...editForm, type: t })}
                                         className={`py-2 rounded-xl text-xs font-semibold transition-all border ${editForm.type === t
-                                                ? t === "INCOME" ? "bg-emerald-500 text-white border-emerald-500"
-                                                    : t === "EXPENSE" ? "bg-red-500 text-white border-red-500"
-                                                        : t === "INVESTMENT" ? "bg-blue-500 text-white border-blue-500"
-                                                            : "bg-gray-500 text-white border-gray-500"
-                                                : "bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-400 border-gray-200 dark:border-gray-700 hover:border-gray-400"
+                                            ? t === "INCOME" ? "bg-emerald-500 text-white border-emerald-500"
+                                                : t === "EXPENSE" ? "bg-red-500 text-white border-red-500"
+                                                    : t === "INVESTMENT" ? "bg-blue-500 text-white border-blue-500"
+                                                        : "bg-gray-500 text-white border-gray-500"
+                                            : "bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-400 border-gray-200 dark:border-gray-700 hover:border-gray-400"
                                             }`}
                                     >
                                         {t === "INCOME" ? "Income" : t === "EXPENSE" ? "Expense" : t === "INVESTMENT" ? "Invest." : "Transfer"}
@@ -350,8 +368,8 @@ export function TransactionList({
                                         {format(new Date(dateStr), "EEEE, MMM d")}
                                     </h3>
                                     <span className={`font-semibold text-sm ${dailyTotal > 0 ? 'text-emerald-600 dark:text-emerald-400' :
-                                            dailyTotal < 0 ? 'text-red-500 dark:text-red-400' :
-                                                'text-gray-400'
+                                        dailyTotal < 0 ? 'text-red-500 dark:text-red-400' :
+                                            'text-gray-400'
                                         }`}>
                                         {dailyTotal > 0 ? '+' : dailyTotal < 0 ? '-' : ''}{dailyTotal !== 0 ? formatINR(Math.abs(dailyTotal)) : ''}
                                     </span>
@@ -397,9 +415,9 @@ export function TransactionList({
 
                                                 <div className="flex items-center gap-4">
                                                     <div className={`font-semibold whitespace-nowrap ${isIncome ? 'text-emerald-600 dark:text-emerald-400' :
-                                                            isExpense ? 'text-red-500 dark:text-red-400' :
-                                                                isInvestment ? 'text-blue-500 dark:text-blue-400' :
-                                                                    'text-gray-500 dark:text-gray-400'
+                                                        isExpense ? 'text-red-500 dark:text-red-400' :
+                                                            isInvestment ? 'text-blue-500 dark:text-blue-400' :
+                                                                'text-gray-500 dark:text-gray-400'
                                                         }`}>
                                                         {isIncome ? '+' : isExpense ? '-' : ''}{formatINR(tx.amount)}
                                                     </div>

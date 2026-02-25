@@ -8,8 +8,27 @@ import {
     Home,
     Zap,
     Tv,
-    Briefcase
+    Briefcase,
+    TrendingUp,
+    Fuel,
+    Phone,
+    Smartphone,
+    Stethoscope,
+    Building2,
+    Flame,
+    Banknote,
+    Tag
 } from "lucide-react";
+
+// Deterministic color for unknown categories
+function hashColor(str: string): string {
+    let hash = 0;
+    for (let i = 0; i < str.length; i++) {
+        hash = str.charCodeAt(i) + ((hash << 5) - hash);
+    }
+    const hue = Math.abs(hash) % 360;
+    return `hsl(${hue}, 65%, 55%)`;
+}
 
 export function CategoryCards({ data }: { data: { category: string, amount: number, color: string }[] }) {
     const formatINR = (value: number) => {
@@ -22,15 +41,19 @@ export function CategoryCards({ data }: { data: { category: string, amount: numb
 
     const getIcon = (category: string) => {
         switch (category) {
-            case "Food & Dining": return Utensils;
-            case "Transport": return Car;
+            case "Food & Dining": case "Food & Drink": case "Food & Drinks": return Utensils;
+            case "Transport": case "Petrol": return Car;
             case "Health": return HeartPulse;
             case "Housing": return Home;
-            case "Utilities": return Zap;
-            case "Entertainment": return Tv;
+            case "Utilities": case "Electricity Bill": case "MNGL": return Zap;
+            case "Landline": case "VI": return Phone;
+            case "Entertainment": case "App Purchase": case "App Purchase ": return Tv;
             case "Shopping": return ShoppingBag;
-            case "Income": return Briefcase;
-            default: return ShoppingBag;
+            case "Income": case "Clinic": case "Baramati": case "Apollo": case "Inamdar":
+            case "Sahyadri Deccan": case "Sahyadri Bibwewadi": return Briefcase;
+            case "Mutual Funds": case "Investment": return TrendingUp;
+            case "Salary": return Banknote;
+            default: return Tag;
         }
     };
 
@@ -72,29 +95,37 @@ export function RecentTransactions({ transactions }: { transactions: ExtTransact
 
     const getIcon = (category: string) => {
         switch (category) {
-            case "Food & Dining": return Utensils;
-            case "Transport": return Car;
+            case "Food & Dining": case "Food & Drink": case "Food & Drinks": return Utensils;
+            case "Transport": case "Petrol": return Car;
             case "Health": return HeartPulse;
             case "Housing": return Home;
-            case "Utilities": return Zap;
-            case "Entertainment": return Tv;
+            case "Utilities": case "Electricity Bill": case "MNGL": return Zap;
+            case "Landline": case "VI": return Phone;
+            case "Entertainment": case "App Purchase": case "App Purchase ": return Tv;
             case "Shopping": return ShoppingBag;
-            case "Income": return Briefcase;
-            default: return ShoppingBag;
+            case "Income": case "Clinic": case "Baramati": case "Apollo": case "Inamdar":
+            case "Sahyadri Deccan": case "Sahyadri Bibwewadi": return Briefcase;
+            case "Mutual Funds": case "Investment": return TrendingUp;
+            case "Salary": return Banknote;
+            default: return Tag;
         }
     };
 
     const getColor = (category: string) => {
-        switch (category) {
-            case "Food & Dining": return "var(--color-category-food)";
-            case "Transport": return "var(--color-category-transport)";
-            case "Shopping": return "var(--color-category-shopping)";
-            case "Utilities": return "var(--color-category-utilities)";
-            case "Health": return "var(--color-category-health)";
-            case "Entertainment": return "var(--color-category-entertainment)";
-            case "Income": return "var(--color-category-income)";
-            default: return "var(--color-category-expense)";
-        }
+        const map: Record<string, string> = {
+            "Food & Dining": "#f97316", "Food & Drink": "#f97316", "Food & Drinks": "#f97316",
+            "Transport": "#3b82f6", "Petrol": "#3b82f6",
+            "Shopping": "#ec4899",
+            "Utilities": "#eab308", "Electricity Bill": "#eab308", "MNGL": "#f59e0b",
+            "Health": "#10b981",
+            "Entertainment": "#8b5cf6", "App Purchase": "#8b5cf6", "App Purchase ": "#8b5cf6",
+            "Income": "#22c55e",
+            "Clinic": "#10b981", "Baramati": "#14b8a6", "Apollo": "#06b6d4",
+            "Inamdar": "#0891b2", "Sahyadri Deccan": "#2dd4bf", "Sahyadri Bibwewadi": "#34d399",
+            "Mutual Funds": "#0ea5e9", "Investment": "#0ea5e9",
+            "Salary": "#ef4444", "Landline": "#d97706", "VI": "#a855f7",
+        };
+        return map[category] || hashColor(category);
     };
 
     if (transactions.length === 0) {
