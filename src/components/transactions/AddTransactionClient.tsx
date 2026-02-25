@@ -107,11 +107,27 @@ export function AddTransactionClient({ wallets }: { wallets: any[] }) {
 
             <div className="flex-1 overflow-y-auto px-4 py-6 max-w-lg mx-auto w-full space-y-8">
 
-                {/* Amount Display */}
+                {/* Amount Input — supports both keyboard and on-screen numpad */}
                 <div className="text-center">
                     <p className="text-sm font-medium text-gray-500 mb-2">Amount</p>
-                    <div className="text-5xl font-bold tracking-tight text-[var(--color-brand-navy)] dark:text-white break-all">
-                        {formatINR(amountStr)}
+                    <div className="relative inline-block">
+                        <span className="text-5xl font-bold tracking-tight text-[var(--color-brand-navy)] dark:text-white">₹</span>
+                        <input
+                            type="text"
+                            inputMode="decimal"
+                            value={amountStr}
+                            onChange={(e) => {
+                                const v = e.target.value.replace(/[^0-9.]/g, '');
+                                // Allow only one decimal point and max 2 decimal places
+                                if ((v.match(/\./g) || []).length > 1) return;
+                                const [, dec] = v.split('.');
+                                if (dec && dec.length > 2) return;
+                                setAmountStr(v);
+                            }}
+                            placeholder="0"
+                            className="text-5xl font-bold tracking-tight text-[var(--color-brand-navy)] dark:text-white bg-transparent border-none outline-none text-center w-48 sm:w-64 placeholder:text-gray-300 dark:placeholder:text-gray-700"
+                            autoFocus
+                        />
                     </div>
                 </div>
 
