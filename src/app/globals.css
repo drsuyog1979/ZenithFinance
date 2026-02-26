@@ -24,6 +24,8 @@
   /* green-500 */
   --color-category-expense: #ef4444;
   /* red-500 */
+  --color-category-investment: #a855f7;
+  /* purple-500 */
 }
 
 @layer base {

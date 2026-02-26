@@ -86,14 +86,15 @@ export function AddTransactionClient({ wallets }: { wallets: any[] }) {
                     <ChevronLeft className="w-6 h-6" />
                 </Link>
                 <div className="flex bg-gray-100 dark:bg-gray-800 p-1 rounded-xl">
-                    {(["EXPENSE", "INCOME", "TRANSFER"] as TransactionType[]).map((t) => (
+                    {(["EXPENSE", "INCOME", "INVESTMENT", "TRANSFER"] as TransactionType[]).map((t) => (
                         <button
                             key={t}
                             onClick={() => setType(t)}
-                            className={`px-4 py-1.5 rounded-lg text-sm font-medium capitalize transition-all duration-200 ${type === t
+                            className={`px-3 py-1.5 rounded-lg text-xs font-medium capitalize transition-all duration-200 ${type === t
                                 ? t === 'INCOME' ? 'bg-[var(--color-category-income)] text-white shadow-sm'
                                     : t === 'EXPENSE' ? 'bg-[var(--color-category-expense)] text-white shadow-sm'
-                                        : 'bg-[var(--color-brand-navy)] text-white shadow-sm'
+                                        : t === 'INVESTMENT' ? 'bg-[var(--color-category-investment)] text-white shadow-sm'
+                                            : 'bg-[var(--color-brand-navy)] text-white shadow-sm'
                                 : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'
                                 }`}
                         >
