@@ -83,13 +83,16 @@ export async function getTaxSummary() {
         const projectedAnnualIncome = Math.round((realizedIncome / monthsPassed) * 12);
 
         // Get Capital Gains from Phase 2
-        // We need a way to get summarized gains
-        const capitalGains = await prisma.assetSale.aggregate({
-            where: { userId, sellDate: { gte: fyStart, lte: fyEnd } },
-            _sum: { gainAmountPaise: true }
-        });
-
-        const totalGain = capitalGains._sum.gainAmountPaise || 0;
+        let totalGain = 0;
+        try {
+            const capitalGains = await prisma.assetSale.aggregate({
+                where: { userId, sellDate: { gte: fyStart, lte: fyEnd } },
+                _sum: { gainAmountPaise: true }
+            });
+            totalGain = capitalGains._sum?.gainAmountPaise || 0;
+        } catch (e) {
+            console.error("Failed to aggregate capital gains", e);
+        }
 
         let estimatedTax = 0;
         if (profile) {
@@ -167,15 +170,16 @@ export async function getITRSummary() {
 }
 
 function calculateTax(incomePaise: number, gainsPaise: number, profile: any) {
-    const income = incomePaise / 100;
-    const deductions = profile.deductions as any;
+    const income = (incomePaise || 0) / 100;
+    const deductions = (profile?.deductions as any) || {};
+    const incomeSource = profile?.incomeSource || "";
 
     // 1. Calculate Taxable Income
     let taxableIncome = income;
 
-    if (profile.regime === "NEW") {
+    if (profile?.regime === "NEW") {
         // Standard Deduction: 75,000 for salaried
-        if (profile.incomeSource.toLowerCase().includes("salaried")) {
+        if (incomeSource.toLowerCase().includes("salaried")) {
             taxableIncome -= 75000;
         }
         // New regime usually doesn't have 80C, 80D etc.
@@ -183,7 +187,7 @@ function calculateTax(incomePaise: number, gainsPaise: number, profile: any) {
         // Old Regime Deductions
         const section80C = Math.min(deductions.section80C || 0, 150000);
         const section80D = deductions.section80D || 0;
-        const standardDeduction = profile.incomeSource.toLowerCase().includes("salaried") ? 50000 : 0;
+        const standardDeduction = incomeSource.toLowerCase().includes("salaried") ? 50000 : 0;
 
         taxableIncome = taxableIncome - section80C - section80D - standardDeduction;
     }
