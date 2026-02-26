@@ -6,9 +6,10 @@ import { useMemo } from "react";
 interface HeatmapProps {
     currentDate: Date;
     data: { date: Date; amount: number }[];
+    type?: 'expenses' | 'income' | 'investments';
 }
 
-export function SpendingHeatmap({ currentDate, data }: HeatmapProps) {
+export function SpendingHeatmap({ currentDate, data, type = 'expenses' }: HeatmapProps) {
     // Generate array of all days in the month
     const daysInMonth = useMemo(() => {
         const start = startOfMonth(currentDate);
@@ -41,6 +42,21 @@ export function SpendingHeatmap({ currentDate, data }: HeatmapProps) {
 
         const intensity = dayTotal / maxSpend;
 
+        if (type === 'income') {
+            if (intensity < 0.25) return "bg-emerald-100 dark:bg-emerald-900/20";
+            if (intensity < 0.5) return "bg-emerald-300 dark:bg-emerald-800/40";
+            if (intensity < 0.75) return "bg-emerald-500 dark:bg-emerald-600/60";
+            return "bg-emerald-600 dark:bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.4)]";
+        }
+
+        if (type === 'investments') {
+            if (intensity < 0.25) return "bg-purple-100 dark:bg-purple-900/20";
+            if (intensity < 0.5) return "bg-purple-300 dark:bg-purple-800/40";
+            if (intensity < 0.75) return "bg-purple-500 dark:bg-purple-600/60";
+            return "bg-purple-600 dark:bg-purple-500 shadow-[0_0_10px_rgba(139,92,246,0.4)]";
+        }
+
+        // Expenses (Default Blue/Navy)
         if (intensity < 0.25) return "bg-blue-200 dark:bg-blue-900/40";
         if (intensity < 0.5) return "bg-blue-400 dark:bg-blue-800/60";
         if (intensity < 0.75) return "bg-blue-600 dark:bg-blue-600/80";
@@ -53,7 +69,7 @@ export function SpendingHeatmap({ currentDate, data }: HeatmapProps) {
             .filter(tx => format(tx.date, 'yyyy-MM-dd') === dayStr)
             .reduce((sum, tx) => sum + tx.amount, 0);
 
-        if (dayTotal === 0) return "No spending";
+        if (dayTotal === 0) return "No " + type;
 
         return "₹" + (dayTotal / 100).toLocaleString('en-IN');
     };
@@ -91,10 +107,10 @@ export function SpendingHeatmap({ currentDate, data }: HeatmapProps) {
                 <span>Less</span>
                 <div className="w-16 h-3 flex overflow-hidden rounded-full">
                     <div className="flex-1 bg-gray-100 dark:bg-gray-800" />
-                    <div className="flex-1 bg-blue-200 dark:bg-blue-900/40" />
-                    <div className="flex-1 bg-blue-400 dark:bg-blue-800/60" />
-                    <div className="flex-1 bg-blue-600 dark:bg-blue-600/80" />
-                    <div className="flex-1 bg-[var(--color-brand-navy)] dark:bg-blue-500" />
+                    <div className={`flex-1 ${type === 'income' ? 'bg-emerald-100' : type === 'investments' ? 'bg-purple-100' : 'bg-blue-200'}`} />
+                    <div className={`flex-1 ${type === 'income' ? 'bg-emerald-300' : type === 'investments' ? 'bg-purple-300' : 'bg-blue-400'}`} />
+                    <div className={`flex-1 ${type === 'income' ? 'bg-emerald-500' : type === 'investments' ? 'bg-purple-500' : 'bg-blue-600'}`} />
+                    <div className={`flex-1 ${type === 'income' ? 'bg-emerald-600' : type === 'investments' ? 'bg-purple-600' : 'bg-[var(--color-brand-navy)]'}`} />
                 </div>
                 <span>More</span>
             </div>

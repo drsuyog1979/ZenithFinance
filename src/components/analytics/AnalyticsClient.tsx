@@ -15,6 +15,7 @@ interface AnalyticsClientProps {
 
 export function AnalyticsClient({ initialTransactions }: AnalyticsClientProps) {
     const [activeTab, setActiveTab] = useState<"cashflow" | "capital_gains">("cashflow");
+    const [heatmapType, setHeatmapType] = useState<"expenses" | "income" | "investments">("expenses");
     const currentDate = useMemo(() => new Date(), []);
 
     // 1. Process Bar Chart Data (6 months)
@@ -38,16 +39,25 @@ export function AnalyticsClient({ initialTransactions }: AnalyticsClientProps) {
     }, [initialTransactions, currentDate]);
 
     // 2. Heatmap Data (Current Month)
-    const currentMonthTxs = useMemo(() => {
+    const investmentCategories = ["Mutual Funds", "Stocks", "ETF", "Gold", "Bonds", "Mutual Fund", "Mutual fund"];
+
+    const heatmapData = useMemo(() => {
         return initialTransactions.filter(tx => {
             const txDate = typeof tx.date === 'string' ? parseISO(tx.date) : tx.date;
-            return tx.type === "EXPENSE" && isSameMonth(txDate, currentDate);
+            if (!isSameMonth(txDate, currentDate)) return false;
+
+            if (heatmapType === "expenses") return tx.type === "EXPENSE";
+            if (heatmapType === "income") return tx.type === "INCOME";
+            if (heatmapType === "investments") {
+                return tx.type === "EXPENSE" && investmentCategories.some(cat => tx.category?.includes(cat));
+            }
+            return false;
         }).map(tx => ({
             date: typeof tx.date === 'string' ? parseISO(tx.date) : tx.date,
             amount: tx.amount,
             category: tx.category
         }));
-    }, [initialTransactions, currentDate]);
+    }, [initialTransactions, currentDate, heatmapType]);
 
     // 3. Line Chart Data (6 months)
     const lineData = useMemo(() => {
@@ -70,9 +80,16 @@ export function AnalyticsClient({ initialTransactions }: AnalyticsClientProps) {
     }, [initialTransactions, currentDate]);
 
     // 4. Pie Chart Data
+    const currentMonthExpenses = useMemo(() => {
+        return initialTransactions.filter(tx => {
+            const txDate = typeof tx.date === 'string' ? parseISO(tx.date) : tx.date;
+            return tx.type === "EXPENSE" && isSameMonth(txDate, currentDate);
+        });
+    }, [initialTransactions, currentDate]);
+
     const pieData = useMemo(() => {
         const categoryMap: Record<string, number> = {};
-        currentMonthTxs.forEach((tx) => {
+        currentMonthExpenses.forEach((tx) => {
             const cat = tx.category || "Other";
             categoryMap[cat] = (categoryMap[cat] || 0) + tx.amount;
         });
@@ -92,7 +109,7 @@ export function AnalyticsClient({ initialTransactions }: AnalyticsClientProps) {
         return Object.entries(categoryMap)
             .map(([name, value]) => ({ name, value, color: getColor(name) }))
             .sort((a, b) => b.value - a.value);
-    }, [currentMonthTxs]);
+    }, [currentMonthExpenses]);
 
     return (
         <div className="space-y-6">
@@ -136,11 +153,26 @@ export function AnalyticsClient({ initialTransactions }: AnalyticsClientProps) {
                     </div>
 
                     <div className="bg-white dark:bg-gray-900 rounded-3xl p-6 shadow-sm border border-gray-100 dark:border-gray-800">
-                        <div className="mb-6">
-                            <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-1 leading-tight">Daily Intensity</h2>
-                            <p className="text-[10px] text-gray-400 uppercase tracking-widest font-black">{format(currentDate, "MMMM yyyy")} Heatmap</p>
+                        <div className="mb-6 flex items-center justify-between">
+                            <div>
+                                <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-1 leading-tight">Intensity</h2>
+                                <p className="text-[10px] text-gray-400 uppercase tracking-widest font-black">{format(currentDate, "MMMM yyyy")} Heatmap</p>
+                            </div>
+                            <div className="flex bg-gray-50 dark:bg-gray-800/50 p-1 rounded-xl">
+                                {(["expenses", "income", "investments"] as const).map((type) => (
+                                    <button
+                                        key={type}
+                                        onClick={() => setHeatmapType(type)}
+                                        className={`px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-all ${heatmapType === type
+                                            ? "bg-white dark:bg-gray-700 text-indigo-600 shadow-sm"
+                                            : "text-gray-400 hover:text-gray-600"}`}
+                                    >
+                                        {type}
+                                    </button>
+                                ))}
+                            </div>
                         </div>
-                        <SpendingHeatmap currentDate={currentDate} data={currentMonthTxs} />
+                        <SpendingHeatmap currentDate={currentDate} data={heatmapData} type={heatmapType} />
                     </div>
 
                     <div className="bg-white dark:bg-gray-900 rounded-3xl p-6 shadow-sm border border-gray-100 dark:border-gray-800 lg:col-span-2">
