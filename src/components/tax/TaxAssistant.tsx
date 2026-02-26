@@ -121,7 +121,23 @@ export function TaxAssistant() {
         return (
             <div className="flex flex-col items-center justify-center p-20 text-gray-400 gap-4">
                 <Loader2 className="w-10 h-10 animate-spin text-indigo-500" />
-                <p className="font-medium">Calculating your tax outlook...</p>
+                <p className="font-medium animate-pulse text-gray-500 dark:text-gray-400">Preparing your tax projections...</p>
+            </div>
+        );
+    }
+
+    if (error) {
+        return (
+            <div className="p-12 text-center bg-white dark:bg-gray-900 rounded-3xl border border-red-100 dark:border-red-900/30 shadow-sm">
+                <AlertTriangle className="w-12 h-12 text-rose-500 mx-auto mb-4" />
+                <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">Calculation Error</h3>
+                <p className="text-gray-500 dark:text-gray-400 mb-6 max-w-sm mx-auto">{error}</p>
+                <button
+                    onClick={loadData}
+                    className="px-6 py-2 bg-indigo-600 text-white rounded-xl font-bold hover:bg-indigo-700 transition-all"
+                >
+                    Retry Calculation
+                </button>
             </div>
         );
     }
