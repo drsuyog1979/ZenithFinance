@@ -49,7 +49,7 @@ export function AnalyticsClient({ initialTransactions }: AnalyticsClientProps) {
             if (heatmapType === "expenses") return tx.type === "EXPENSE";
             if (heatmapType === "income") return tx.type === "INCOME";
             if (heatmapType === "investments") {
-                return tx.type === "EXPENSE" && investmentCategories.some(cat => tx.category?.includes(cat));
+                return tx.type === "INVESTMENT" || (tx.type === "EXPENSE" && investmentCategories.some(cat => tx.category?.includes(cat)));
             }
             return false;
         }).map(tx => ({
@@ -78,38 +78,6 @@ export function AnalyticsClient({ initialTransactions }: AnalyticsClientProps) {
         }
         return data;
     }, [initialTransactions, currentDate]);
-
-    // 4. Pie Chart Data
-    const currentMonthExpenses = useMemo(() => {
-        return initialTransactions.filter(tx => {
-            const txDate = typeof tx.date === 'string' ? parseISO(tx.date) : tx.date;
-            return tx.type === "EXPENSE" && isSameMonth(txDate, currentDate);
-        });
-    }, [initialTransactions, currentDate]);
-
-    const pieData = useMemo(() => {
-        const categoryMap: Record<string, number> = {};
-        currentMonthExpenses.forEach((tx) => {
-            const cat = tx.category || "Other";
-            categoryMap[cat] = (categoryMap[cat] || 0) + tx.amount;
-        });
-
-        const getColor = (category: string) => {
-            switch (category) {
-                case "Food & Dining": return "#f97316";
-                case "Transport": return "#3b82f6";
-                case "Shopping": return "#ec4899";
-                case "Utilities": return "#eab308";
-                case "Health": return "#10b981";
-                case "Entertainment": return "#8b5cf6";
-                default: return "#ef4444";
-            }
-        };
-
-        return Object.entries(categoryMap)
-            .map(([name, value]) => ({ name, value, color: getColor(name) }))
-            .sort((a, b) => b.value - a.value);
-    }, [currentMonthExpenses]);
 
     return (
         <div className="space-y-6">
@@ -181,21 +149,6 @@ export function AnalyticsClient({ initialTransactions }: AnalyticsClientProps) {
                             <p className="text-[10px] text-gray-400 uppercase tracking-widest font-black">Cumulative Performance</p>
                         </div>
                         <TrendLineChart data={lineData} />
-                    </div>
-
-                    <div className="bg-white dark:bg-gray-900 rounded-3xl p-6 shadow-sm border border-gray-100 dark:border-gray-800 lg:col-span-2 flex flex-col items-center">
-                        <div className="mb-6 w-full text-left flex items-center justify-between">
-                            <div>
-                                <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-1 leading-tight">Spending Categories</h2>
-                                <p className="text-[10px] text-gray-400 uppercase tracking-widest font-black">{format(currentDate, "MMMM yyyy")} Breakdown</p>
-                            </div>
-                            <div className="w-10 h-10 rounded-xl bg-emerald-50 dark:bg-emerald-900/20 text-emerald-500 flex items-center justify-center">
-                                <PieChart size={20} />
-                            </div>
-                        </div>
-                        <div className="w-full max-w-xl">
-                            <SpendDonutChart data={pieData} />
-                        </div>
                     </div>
                 </div>
             ) : (
