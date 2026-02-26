@@ -76,10 +76,10 @@ model AssetLot {
   symbol         String
   isin           String?
   assetType      AssetType
-  quantityUnits  Int
+  quantityUnits  Float
   buyPricePaise  Int
   buyDate        DateTime
-  remainingUnits Int
+  remainingUnits Float
   userId         String
   createdAt      DateTime    @default(now())
   user           User        @relation(fields: [userId], references: [id])
@@ -94,7 +94,7 @@ model AssetSale {
   symbol          String
   isin            String?
   assetType       AssetType
-  quantityUnits   Int
+  quantityUnits   Float
   sellPricePaise  Int
   sellDate        DateTime
   gainType        GainType
