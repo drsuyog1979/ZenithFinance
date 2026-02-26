@@ -183,8 +183,13 @@ export default function DashboardPage() {
 
                             {/* Top Categories */}
                             <div>
-                                <h3 className="text-lg font-semibold mb-3 text-gray-900 dark:text-gray-100">Top Spending Categories</h3>
-                                <CategoryCards data={data.categoryData} />
+                                <h3 className="text-lg font-semibold mb-3 text-gray-900 dark:text-gray-100">
+                                    {activeChart === "spending" ? "Top Spending Categories" : "Top Earning Categories"}
+                                </h3>
+                                <CategoryCards data={activeChart === "spending"
+                                    ? data.spendDonutData.map((d: any) => ({ category: d.name, amount: d.value, color: d.color }))
+                                    : data.incomeDonutData.map((d: any) => ({ category: d.name, amount: d.value, color: d.color }))
+                                } />
                             </div>
                         </div>
 

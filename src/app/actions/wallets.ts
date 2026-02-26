@@ -106,3 +106,26 @@ export async function deleteWallet(walletId: string) {
         return { error: error.message };
     }
 }
+
+export async function updateWallet(walletId: string, data: { name?: string, color?: string, openingBalance?: number }) {
+    try {
+        const userId = await getUserId();
+
+        const wallet = await prisma.wallet.findUnique({
+            where: { id: walletId }
+        });
+
+        if (wallet?.userId !== userId) {
+            throw new Error("Unauthorized");
+        }
+
+        const updatedWallet = await prisma.wallet.update({
+            where: { id: walletId },
+            data
+        });
+
+        return { data: updatedWallet };
+    } catch (error: any) {
+        return { error: error.message };
+    }
+}
