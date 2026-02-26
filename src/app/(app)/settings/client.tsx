@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import Link from "next/link";
 import {
     Moon, Sun, Monitor, Download, Cloud, Tag, IndianRupee, LogOut, ChevronRight,
     ChevronDown, Loader2, Check, Utensils, Car, Zap, Tv, Briefcase, X, Plus,
@@ -42,7 +43,6 @@ export function SettingsClient({ userEmail }: { userEmail: string }) {
     const router = useRouter();
     const supabase = createClient();
     const [theme, setTheme] = useState<"light" | "dark" | "system">("system");
-    const [isExporting, setIsExporting] = useState(false);
     const [showCategories, setShowCategories] = useState(false);
     const [showCurrency, setShowCurrency] = useState(false);
     const [selectedCurrency, setSelectedCurrency] = useState("INR");
@@ -115,12 +115,6 @@ export function SettingsClient({ userEmail }: { userEmail: string }) {
         router.refresh();
     };
 
-    const handleExport = async () => {
-        setIsExporting(true);
-        await new Promise(r => setTimeout(r, 1500));
-        alert("Export feature coming in Phase 2 — it will download a CSV of all your transactions.");
-        setIsExporting(false);
-    };
 
     const currentCurrency = CURRENCIES.find(c => c.code === selectedCurrency) || CURRENCIES[0];
 
@@ -344,22 +338,21 @@ export function SettingsClient({ userEmail }: { userEmail: string }) {
                 </div>
 
                 <div className="divide-y divide-gray-100 dark:divide-gray-800">
-                    <button
-                        onClick={handleExport}
-                        disabled={isExporting}
-                        className="w-full p-6 flex items-center justify-between hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors text-left disabled:opacity-50"
+                    <Link
+                        href="/export"
+                        className="w-full p-6 flex items-center justify-between hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors text-left"
                     >
                         <div className="flex items-center gap-4">
                             <div className="w-10 h-10 rounded-xl bg-emerald-50 dark:bg-emerald-900/20 text-emerald-500 flex items-center justify-center">
                                 <Download size={20} />
                             </div>
                             <div>
-                                <p className="font-semibold text-gray-900 dark:text-gray-100">Export as CSV</p>
-                                <p className="text-sm text-gray-500">Download all your transactions</p>
+                                <p className="font-semibold text-gray-900 dark:text-gray-100">Export Center</p>
+                                <p className="text-sm text-gray-500">Download data as PDF or CSV</p>
                             </div>
                         </div>
-                        {isExporting ? <Loader2 className="animate-spin text-gray-400" size={20} /> : <ChevronRight className="text-gray-400" size={20} />}
-                    </button>
+                        <ChevronRight className="text-gray-400" size={20} />
+                    </Link>
                 </div>
             </div>
 
