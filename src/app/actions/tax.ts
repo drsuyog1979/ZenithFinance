@@ -68,15 +68,16 @@ export async function getTaxSummary() {
             fyEnd = new Date(currentYear, 2, 31);
         }
 
-        const incomeTransactions = await prisma.transaction.findMany({
+        const incomeAggr = await prisma.transaction.aggregate({
             where: {
                 userId,
                 type: "INCOME",
                 date: { gte: fyStart, lte: fyEnd }
-            }
+            },
+            _sum: { amount: true }
         });
 
-        const realizedIncome = incomeTransactions.reduce((sum, tx) => sum + tx.amount, 0);
+        const realizedIncome = incomeAggr._sum?.amount || 0;
 
         // Project annual income
         const monthsPassed = Math.max(1, differenceInMonths(now, fyStart) + 1);
@@ -136,18 +137,18 @@ export async function getITRSummary() {
             fyEnd = new Date(currentYear, 2, 31);
         }
 
-        const incomeTransactions = await prisma.transaction.findMany({
+        const incomeAggrByCategory = await prisma.transaction.groupBy({
+            by: ['category'],
             where: {
                 userId,
                 type: "INCOME",
                 date: { gte: fyStart, lte: fyEnd }
-            }
+            },
+            _sum: { amount: true }
         });
 
-        const incomeBySource = incomeTransactions.reduce((acc, tx) => {
-            const category = tx.category || "General";
-            if (!acc[category]) acc[category] = 0;
-            acc[category] += tx.amount;
+        const incomeBySource = incomeAggrByCategory.reduce((acc, curr) => {
+            acc[curr.category || "General"] = curr._sum?.amount || 0;
             return acc;
         }, {} as Record<string, number>);
 
