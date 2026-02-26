@@ -9,7 +9,7 @@ export const dynamic = "force-dynamic"
 export default async function TransactionsPage({
     searchParams
 }: {
-    searchParams: Promise<{ type?: string }>
+    searchParams: Promise<{ type?: string, wallet?: string }>
 }) {
     const resolvedParams = await searchParams;
     const [txRes, walletRes] = await Promise.all([
@@ -30,6 +30,7 @@ export default async function TransactionsPage({
     const initialTypeFilter = resolvedParams.type && validTypes.includes(resolvedParams.type)
         ? resolvedParams.type
         : "ALL";
+    const initialWalletFilter = resolvedParams.wallet || "ALL";
 
     return (
         <div className="p-4 md:p-8 max-w-4xl mx-auto pb-24 md:pb-8">
@@ -51,6 +52,7 @@ export default async function TransactionsPage({
                 initialTransactions={txRes.data || []}
                 wallets={walletRes.data || []}
                 initialTypeFilter={initialTypeFilter}
+                initialWalletFilter={initialWalletFilter}
             />
         </div>
     )

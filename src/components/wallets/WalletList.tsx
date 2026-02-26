@@ -4,10 +4,12 @@ import { useState } from "react";
 import { Plus, Wallet, Edit2, Trash2 } from "lucide-react";
 import { deleteWallet } from "@/app/actions/wallets";
 import { EditWalletModal } from "./WalletForm";
+import { useRouter } from "next/navigation";
 
 export function WalletList({ wallets }: { wallets: any[] }) {
     const [isDeleting, setIsDeleting] = useState<string | null>(null);
     const [editingWallet, setEditingWallet] = useState<any | null>(null);
+    const router = useRouter();
 
     const formatINR = (value: number) => {
         return new Intl.NumberFormat('en-IN', {
@@ -17,7 +19,8 @@ export function WalletList({ wallets }: { wallets: any[] }) {
         }).format(value / 100);
     };
 
-    const handleDelete = async (id: string) => {
+    const handleDelete = async (id: string, e: React.MouseEvent) => {
+        e.stopPropagation();
         if (confirm("Are you sure? This will delete all transactions in this wallet.")) {
             setIsDeleting(id);
             await deleteWallet(id);
@@ -44,7 +47,11 @@ export function WalletList({ wallets }: { wallets: any[] }) {
         <>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {wallets.map((wallet) => (
-                    <div key={wallet.id} className="bg-white dark:bg-gray-900 rounded-3xl p-6 shadow-sm border border-gray-100 dark:border-gray-800 relative group overflow-hidden transition-all hover:shadow-md">
+                    <div
+                        key={wallet.id}
+                        onClick={() => router.push(`/transactions?wallet=${wallet.id}`)}
+                        className="bg-white dark:bg-gray-900 rounded-3xl p-6 shadow-sm border border-gray-100 dark:border-gray-800 relative group overflow-hidden transition-all hover:shadow-md cursor-pointer hover:border-[var(--color-brand-navy)]"
+                    >
                         {/* Card background blob based on color */}
                         <div
                             className="absolute -right-8 -top-8 w-32 h-32 rounded-full opacity-[0.03] transition-transform group-hover:scale-110 dynamic-bg"
@@ -66,14 +73,17 @@ export function WalletList({ wallets }: { wallets: any[] }) {
                             </div>
                             <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity relative z-10">
                                 <button
-                                    onClick={() => setEditingWallet(wallet)}
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        setEditingWallet(wallet);
+                                    }}
                                     className="p-1.5 text-gray-400 hover:text-[var(--color-brand-navy)] transition-colors rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800"
                                     aria-label="Edit wallet"
                                 >
                                     <Edit2 size={16} />
                                 </button>
                                 <button
-                                    onClick={() => handleDelete(wallet.id)}
+                                    onClick={(e) => handleDelete(wallet.id, e)}
                                     disabled={isDeleting === wallet.id}
                                     className="p-1.5 text-gray-400 hover:text-red-500 transition-colors rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 disabled:opacity-50"
                                     aria-label="Delete wallet"

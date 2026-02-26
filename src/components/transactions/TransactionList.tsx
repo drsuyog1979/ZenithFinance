@@ -43,16 +43,18 @@ function loadCategories(): string[] {
 export function TransactionList({
     initialTransactions,
     wallets,
-    initialTypeFilter = "ALL"
+    initialTypeFilter = "ALL",
+    initialWalletFilter = "ALL"
 }: {
     initialTransactions: any[],
     wallets: any[],
-    initialTypeFilter?: string
+    initialTypeFilter?: string,
+    initialWalletFilter?: string
 }) {
     const [transactions, setTransactions] = useState(initialTransactions);
     const [search, setSearch] = useState("");
     const [typeFilter, setTypeFilter] = useState(initialTypeFilter);
-    const [walletFilter, setWalletFilter] = useState("ALL");
+    const [walletFilter, setWalletFilter] = useState(initialWalletFilter);
     const [deletingId, setDeletingId] = useState<string | null>(null);
     const [editingTx, setEditingTx] = useState<any | null>(null);
     const [editForm, setEditForm] = useState({ amount: "", category: "", description: "", type: "", date: "", walletId: "" });
