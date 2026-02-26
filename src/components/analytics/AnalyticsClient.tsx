@@ -8,15 +8,22 @@ import { SpendDonutChart } from "@/components/dashboard/DonutChart";
 import { CapitalGainsDashboard } from "@/components/analytics/CapitalGainsDashboard";
 import { format, subMonths, isSameMonth, parseISO } from "date-fns";
 import { Activity, TrendingUp, BarChart3, PieChart } from "lucide-react";
+import { useRouter } from "next/navigation";
 
 interface AnalyticsClientProps {
     initialTransactions: any[];
 }
 
 export function AnalyticsClient({ initialTransactions }: AnalyticsClientProps) {
+    const router = useRouter();
     const [activeTab, setActiveTab] = useState<"cashflow" | "capital_gains">("cashflow");
     const [heatmapType, setHeatmapType] = useState<"expenses" | "income" | "investments">("expenses");
     const currentDate = useMemo(() => new Date(), []);
+
+    const handleDayClick = (date: Date) => {
+        const dateStr = format(date, 'yyyy-MM-dd');
+        router.push(`/transactions?date=${dateStr}`);
+    };
 
     // 1. Process Bar Chart Data (6 months)
     const barData = useMemo(() => {
@@ -140,7 +147,7 @@ export function AnalyticsClient({ initialTransactions }: AnalyticsClientProps) {
                                 ))}
                             </div>
                         </div>
-                        <SpendingHeatmap currentDate={currentDate} data={heatmapData} type={heatmapType} />
+                        <SpendingHeatmap currentDate={currentDate} data={heatmapData} type={heatmapType} onDayClick={handleDayClick} />
                     </div>
 
                     <div className="bg-white dark:bg-gray-900 rounded-3xl p-6 shadow-sm border border-gray-100 dark:border-gray-800 lg:col-span-2">

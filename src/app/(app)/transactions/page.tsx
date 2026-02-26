@@ -9,7 +9,7 @@ export const dynamic = "force-dynamic"
 export default async function TransactionsPage({
     searchParams
 }: {
-    searchParams: Promise<{ type?: string, wallet?: string }>
+    searchParams: Promise<{ type?: string, wallet?: string, date?: string }>
 }) {
     const resolvedParams = await searchParams;
     const [txRes, walletRes] = await Promise.all([
@@ -53,6 +53,7 @@ export default async function TransactionsPage({
                 wallets={walletRes.data || []}
                 initialTypeFilter={initialTypeFilter}
                 initialWalletFilter={initialWalletFilter}
+                initialDateFilter={resolvedParams.date}
             />
         </div>
     )

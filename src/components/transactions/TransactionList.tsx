@@ -44,17 +44,20 @@ export function TransactionList({
     initialTransactions,
     wallets,
     initialTypeFilter = "ALL",
-    initialWalletFilter = "ALL"
+    initialWalletFilter = "ALL",
+    initialDateFilter = ""
 }: {
     initialTransactions: any[],
     wallets: any[],
     initialTypeFilter?: string,
-    initialWalletFilter?: string
+    initialWalletFilter?: string,
+    initialDateFilter?: string
 }) {
     const [transactions, setTransactions] = useState(initialTransactions);
     const [search, setSearch] = useState("");
     const [typeFilter, setTypeFilter] = useState(initialTypeFilter);
     const [walletFilter, setWalletFilter] = useState(initialWalletFilter);
+    const [dateFilter, setDateFilter] = useState(initialDateFilter);
     const [deletingId, setDeletingId] = useState<string | null>(null);
     const [editingTx, setEditingTx] = useState<any | null>(null);
     const [editForm, setEditForm] = useState({ amount: "", category: "", description: "", type: "", date: "", walletId: "" });
@@ -166,6 +169,10 @@ export function TransactionList({
         if (search && !(tx.description?.toLowerCase().includes(search.toLowerCase()) || tx.category.toLowerCase().includes(search.toLowerCase()))) return false;
         if (typeFilter !== "ALL" && tx.type !== typeFilter) return false;
         if (walletFilter !== "ALL" && tx.walletId !== walletFilter) return false;
+        if (dateFilter) {
+            const txDate = format(new Date(tx.date), "yyyy-MM-dd");
+            if (txDate !== dateFilter) return false;
+        }
         return true;
     });
 
@@ -221,6 +228,21 @@ export function TransactionList({
                         </select>
                     </div>
                 </div>
+
+                {dateFilter && (
+                    <div className="flex items-center gap-2 animate-in fade-in slide-in-from-top-1 duration-300">
+                        <div className="px-3 py-1.5 bg-indigo-50 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 rounded-lg text-xs font-bold flex items-center gap-2 border border-indigo-100 dark:border-indigo-800">
+                            <span>Showing transactions for {format(new Date(dateFilter), "MMMM d, yyyy")}</span>
+                            <button
+                                onClick={() => setDateFilter("")}
+                                className="hover:bg-indigo-100 dark:hover:bg-indigo-800 p-0.5 rounded transition-colors"
+                                title="Clear date filter"
+                            >
+                                <X size={14} />
+                            </button>
+                        </div>
+                    </div>
+                )}
             </div>
 
             {/* ── Edit Modal ── */}

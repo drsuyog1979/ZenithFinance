@@ -7,9 +7,10 @@ interface HeatmapProps {
     currentDate: Date;
     data: { date: Date; amount: number }[];
     type?: 'expenses' | 'income' | 'investments';
+    onDayClick?: (date: Date) => void;
 }
 
-export function SpendingHeatmap({ currentDate, data, type = 'expenses' }: HeatmapProps) {
+export function SpendingHeatmap({ currentDate, data, type = 'expenses', onDayClick }: HeatmapProps) {
     // Generate array of all days in the month
     const daysInMonth = useMemo(() => {
         const start = startOfMonth(currentDate);
@@ -89,8 +90,11 @@ export function SpendingHeatmap({ currentDate, data, type = 'expenses' }: Heatma
 
                 {daysInMonth.map((day) => (
                     <div key={day.toString()} className="group relative">
-                        <div
-                            className={`aspect-square rounded-lg sm:rounded-xl transition-all duration-300 hover:scale-110 cursor-pointer ${getIntensityClass(day)}`}
+                        <button
+                            type="button"
+                            onClick={() => onDayClick?.(day)}
+                            className={`w-full aspect-square rounded-lg sm:rounded-xl transition-all duration-300 hover:scale-110 cursor-pointer ${getIntensityClass(day)}`}
+                            aria-label={`${format(day, 'MMM d, yyyy')}: ${getAmountStr(day)}`}
                         />
 
                         {/* Tooltip */}
