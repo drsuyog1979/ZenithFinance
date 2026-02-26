@@ -447,7 +447,7 @@ export function TransactionList({
                                                     </div>
 
                                                     {/* Actions appear on hover */}
-                                                    <div className="hidden sm:flex opacity-0 group-hover:opacity-100 transition-opacity gap-1">
+                                                    <div className="flex opacity-100 sm:opacity-0 group-hover:opacity-100 transition-opacity gap-1">
                                                         <button
                                                             onClick={(e) => openEdit(tx, e)}
                                                             title="Edit transaction"
