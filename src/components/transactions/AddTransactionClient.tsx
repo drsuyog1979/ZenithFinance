@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { Numpad } from "@/components/transactions/Numpad";
 import { createTransaction } from "@/app/actions/transactions";
 import { useRouter } from "next/navigation";
 import {
@@ -208,10 +207,6 @@ export function AddTransactionClient({ wallets }: { wallets: any[] }) {
                     </div>
                 </div>
 
-                {/* Numpad */}
-                <div className="pt-2">
-                    <Numpad value={amountStr} onChange={setAmountStr} />
-                </div>
 
             </div>
 
