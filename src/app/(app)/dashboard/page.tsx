@@ -142,10 +142,10 @@ export default function DashboardPage() {
                 <>
                     <SummaryCards summary={data.summary} />
 
-                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                        {/* Left column: charts */}
-                        <div className="lg:col-span-2 space-y-6">
-
+                    <div className="flex flex-col lg:grid lg:grid-cols-3 gap-6">
+                        {/* Summary Cards and Main Content Wrapper */}
+                        <div className="flex flex-col lg:col-span-2 space-y-6 lg:order-1 order-2">
+                            {/* Category Highlights - now below charts */}
                             {/* Chart toggle card */}
                             <div className="bg-white dark:bg-gray-900 rounded-3xl p-6 shadow-sm border border-gray-100 dark:border-gray-800">
                                 {/* Tab switcher */}
@@ -203,8 +203,8 @@ export default function DashboardPage() {
                             </div>
                         </div>
 
-                        {/* Right column: recent transactions */}
-                        <div className="bg-white dark:bg-gray-900 rounded-3xl p-6 shadow-sm border border-gray-100 dark:border-gray-800 h-[600px] flex flex-col">
+                        {/* Recent Transactions - Promoted to top on mobile */}
+                        <div className="bg-white dark:bg-gray-900 rounded-3xl p-6 shadow-sm border border-gray-100 dark:border-gray-800 h-[500px] lg:h-[600px] flex flex-col lg:order-2 order-1">
                             <div className="flex items-center justify-between mb-6">
                                 <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100">Recent Transactions</h2>
                                 <Link
