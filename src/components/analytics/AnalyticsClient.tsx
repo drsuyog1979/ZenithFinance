@@ -6,8 +6,9 @@ import { TrendLineChart } from "@/components/analytics/LineChart";
 import { SpendingHeatmap } from "@/components/analytics/Heatmap";
 import { SpendDonutChart } from "@/components/dashboard/DonutChart";
 import { CapitalGainsDashboard } from "@/components/analytics/CapitalGainsDashboard";
+import { TaxAssistant } from "@/components/tax/TaxAssistant";
 import { format, subMonths, isSameMonth, parseISO } from "date-fns";
-import { Activity, TrendingUp, BarChart3, PieChart } from "lucide-react";
+import { Activity, TrendingUp, BarChart3, PieChart, IndianRupee } from "lucide-react";
 import { useRouter } from "next/navigation";
 
 interface AnalyticsClientProps {
@@ -16,7 +17,7 @@ interface AnalyticsClientProps {
 
 export function AnalyticsClient({ initialTransactions }: AnalyticsClientProps) {
     const router = useRouter();
-    const [activeTab, setActiveTab] = useState<"cashflow" | "capital_gains">("cashflow");
+    const [activeTab, setActiveTab] = useState<"cashflow" | "capital_gains" | "tax">("cashflow");
     const [heatmapType, setHeatmapType] = useState<"expenses" | "income" | "investments">("expenses");
     const currentDate = useMemo(() => new Date(), []);
 
@@ -88,26 +89,36 @@ export function AnalyticsClient({ initialTransactions }: AnalyticsClientProps) {
 
     return (
         <div className="space-y-6">
-            <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-4">
+            <div className="flex flex-col gap-6 mb-8">
                 <div>
-                    <h1 className="text-3xl font-bold tracking-tight text-[var(--color-brand-navy)] dark:text-white">Analytics</h1>
+                    <h1 className="text-3xl font-bold tracking-tight text-[var(--color-brand-navy)] dark:text-white flex items-center gap-3">
+                        Analytics
+                        <span className="text-[10px] bg-indigo-100 text-indigo-600 px-2 py-0.5 rounded-full font-black uppercase">v3 - Tax Ready</span>
+                    </h1>
                     <p className="text-gray-500 mt-1">Deep dive into your financial habits and trends.</p>
                 </div>
 
-                <div className="inline-flex bg-gray-100 dark:bg-gray-800 p-1.5 rounded-2xl shadow-sm self-start">
+                <div className="flex flex-wrap bg-gray-100 dark:bg-gray-800 p-1.5 rounded-2xl shadow-sm gap-2 max-w-fit">
                     <button
                         onClick={() => setActiveTab("cashflow")}
-                        className={`flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-bold transition-all ${activeTab === "cashflow" ? "bg-white dark:bg-gray-700 text-indigo-600 shadow-md scale-105" : "text-gray-500 hover:bg-gray-50 dark:hover:bg-gray-700/50"}`}
+                        className={`flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-bold transition-all ${activeTab === "cashflow" ? "bg-white dark:bg-gray-700 text-indigo-600 shadow-md ring-1 ring-black/5" : "text-gray-500 hover:bg-gray-50 dark:hover:bg-gray-700/50"}`}
                     >
                         <Activity size={18} />
                         Cashflow
                     </button>
                     <button
                         onClick={() => setActiveTab("capital_gains")}
-                        className={`flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-bold transition-all ${activeTab === "capital_gains" ? "bg-white dark:bg-gray-700 text-indigo-600 shadow-md scale-105" : "text-gray-500 hover:bg-gray-50 dark:hover:bg-gray-700/50"}`}
+                        className={`flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-bold transition-all ${activeTab === "capital_gains" ? "bg-white dark:bg-gray-700 text-blue-600 shadow-md ring-1 ring-black/5" : "text-gray-500 hover:bg-gray-50 dark:hover:bg-gray-700/50"}`}
                     >
                         <TrendingUp size={18} />
                         Capital Gains
+                    </button>
+                    <button
+                        onClick={() => setActiveTab("tax")}
+                        className={`flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-bold transition-all ${activeTab === "tax" ? "bg-white dark:bg-gray-700 text-emerald-600 shadow-md ring-1 ring-black/5" : "text-gray-500 hover:bg-gray-50 dark:hover:bg-gray-700/50"}`}
+                    >
+                        <IndianRupee size={18} />
+                        Income Tax
                     </button>
                 </div>
             </div>
@@ -158,9 +169,13 @@ export function AnalyticsClient({ initialTransactions }: AnalyticsClientProps) {
                         <TrendLineChart data={lineData} />
                     </div>
                 </div>
-            ) : (
+            ) : activeTab === "capital_gains" ? (
                 <div className="animate-in fade-in slide-in-from-bottom-2 duration-500">
                     <CapitalGainsDashboard />
+                </div>
+            ) : (
+                <div className="animate-in fade-in slide-in-from-bottom-2 duration-500">
+                    <TaxAssistant />
                 </div>
             )}
         </div>

@@ -79,9 +79,9 @@ export function AddTransactionClient({ wallets }: { wallets: any[] }) {
     };
 
     return (
-        <div className="flex flex-col min-h-screen pb-20 bg-gray-50 dark:bg-gray-950">
+        <div className="flex flex-col min-h-screen pb-40 bg-gray-50 dark:bg-gray-950">
             {/* Header */}
-            <div className="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 px-4 py-4 sticky top-0 z-10 flex items-center justify-between">
+            <div className="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 px-4 py-4 sticky top-0 z-50 flex items-center justify-between">
                 <Link href="/dashboard" className="p-2 -ml-2 text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full transition-colors">
                     <ChevronLeft className="w-6 h-6" />
                 </Link>
@@ -212,7 +212,7 @@ export function AddTransactionClient({ wallets }: { wallets: any[] }) {
             </div>
 
             {/* Save action floating bottom bar */}
-            <div className="fixed bottom-0 md:bottom-auto md:sticky left-0 right-0 bg-white/80 dark:bg-gray-950/80 backdrop-blur-md border-t border-gray-200 dark:border-gray-800 p-4 z-50">
+            <div className="fixed bottom-16 md:bottom-0 md:sticky left-0 right-0 bg-white/80 dark:bg-gray-950/80 backdrop-blur-md border-t border-gray-200 dark:border-gray-800 p-4 z-[60]">
                 <button
                     onClick={handleSubmit}
                     disabled={loading || !amountStr || parseFloat(amountStr) <= 0}
