@@ -181,15 +181,25 @@ export default function DashboardPage() {
                                 }
                             </div>
 
-                            {/* Top Categories */}
-                            <div>
-                                <h3 className="text-lg font-semibold mb-3 text-gray-900 dark:text-gray-100">
-                                    {activeChart === "spending" ? "Top Spending Categories" : "Top Earning Categories"}
-                                </h3>
-                                <CategoryCards data={activeChart === "spending"
-                                    ? data.spendDonutData.map((d: any) => ({ category: d.name, amount: d.value, color: d.color }))
-                                    : data.incomeDonutData.map((d: any) => ({ category: d.name, amount: d.value, color: d.color }))
-                                } />
+                            {/* Category Highlights */}
+                            <div className="space-y-8">
+                                <div>
+                                    <h3 className="text-lg font-semibold mb-3 text-gray-900 dark:text-gray-100 flex items-center gap-2">
+                                        <div className="w-2 h-2 rounded-full bg-red-500"></div>
+                                        Top Spending Categories
+                                    </h3>
+                                    <CategoryCards data={data.spendDonutData.map((d: any) => ({ category: d.name, amount: d.value, color: d.color }))} />
+                                </div>
+
+                                {data.incomeDonutData.length > 0 && (
+                                    <div>
+                                        <h3 className="text-lg font-semibold mb-3 text-gray-900 dark:text-gray-100 flex items-center gap-2">
+                                            <div className="w-2 h-2 rounded-full bg-emerald-500"></div>
+                                            Top Earning Categories
+                                        </h3>
+                                        <CategoryCards data={data.incomeDonutData.map((d: any) => ({ category: d.name, amount: d.value, color: d.color }))} />
+                                    </div>
+                                )}
                             </div>
                         </div>
 

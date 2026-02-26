@@ -8,17 +8,16 @@ datasource db {
   directUrl = env("DIRECT_URL")
 }
 
-
 model User {
   id           String        @id
   email        String        @unique
   createdAt    DateTime      @default(now())
-  transactions Transaction[]
   assets       AssetLot[]
   sales        AssetSale[]
-  reminders    Reminder[]
   budgets      Budget[]
+  reminders    Reminder[]
   taxProfile   TaxProfile?
+  transactions Transaction[]
   wallets      Wallet[]
 }
 
@@ -30,9 +29,10 @@ model Wallet {
   currency       String        @default("INR")
   openingBalance Int           @default(0)
   userId         String
-  user           User          @relation(fields: [userId], references: [id])
-  transactions   Transaction[]
   createdAt      DateTime      @default(now())
+  transactions   Transaction[]
+  user           User          @relation(fields: [userId], references: [id])
+
   @@index([userId])
 }
 
@@ -46,15 +46,96 @@ model Transaction {
   type        TransactionType
   isRecurring Boolean         @default(false)
   walletId    String
-  wallet      Wallet          @relation(fields: [walletId], references: [id])
   userId      String
-  user        User            @relation(fields: [userId], references: [id])
   createdAt   DateTime        @default(now())
   updatedAt   DateTime        @updatedAt
+  user        User            @relation(fields: [userId], references: [id])
+  wallet      Wallet          @relation(fields: [walletId], references: [id])
+
   @@unique([userId, date, amount, description])
   @@index([userId, date])
   @@index([userId, category])
   @@index([walletId])
+}
+
+model Budget {
+  id          String   @id @default(cuid())
+  category    String
+  monthYear   String
+  limitAmount Int
+  userId      String
+  createdAt   DateTime @default(now())
+  user        User     @relation(fields: [userId], references: [id])
+
+  @@unique([userId, category, monthYear])
+  @@index([userId, monthYear])
+}
+
+model AssetLot {
+  id             String      @id @default(cuid())
+  symbol         String
+  isin           String?
+  assetType      AssetType
+  quantityUnits  Int
+  buyPricePaise  Int
+  buyDate        DateTime
+  remainingUnits Int
+  userId         String
+  createdAt      DateTime    @default(now())
+  user           User        @relation(fields: [userId], references: [id])
+  sales          AssetSale[]
+
+  @@index([userId, symbol])
+  @@index([userId, buyDate])
+}
+
+model AssetSale {
+  id              String    @id @default(cuid())
+  symbol          String
+  isin            String?
+  assetType       AssetType
+  quantityUnits   Int
+  sellPricePaise  Int
+  sellDate        DateTime
+  gainType        GainType
+  holdingDays     Int
+  gainAmountPaise Int
+  lotId           String
+  userId          String
+  createdAt       DateTime  @default(now())
+  lot             AssetLot  @relation(fields: [lotId], references: [id])
+  user            User      @relation(fields: [userId], references: [id])
+
+  @@index([userId, sellDate])
+  @@index([userId, gainType])
+}
+
+model Reminder {
+  id        String       @id @default(cuid())
+  title     String
+  dueDate   DateTime
+  amount    Int?
+  type      ReminderType
+  isPaid    Boolean      @default(false)
+  userId    String
+  createdAt DateTime     @default(now())
+  user      User         @relation(fields: [userId], references: [id])
+
+  @@index([userId, dueDate])
+  @@index([userId, isPaid])
+}
+
+model TaxProfile {
+  id            String       @id @default(cuid())
+  financialYear String
+  regime        TaxRegime
+  taxpayerType  TaxpayerType
+  incomeSource  String
+  tdsDeducted   Int          @default(0)
+  deductions    Json
+  userId        String       @unique
+  updatedAt     DateTime     @updatedAt
+  user          User         @relation(fields: [userId], references: [id])
 }
 
 enum TransactionType {
@@ -80,55 +161,7 @@ enum ImportSource {
   KFINTECH
   MANUAL
   OTHER
-}
-
-model Budget {
-  id          String   @id @default(cuid())
-  category    String
-  monthYear   String
-  limitAmount Int
-  userId      String
-  user        User     @relation(fields: [userId], references: [id])
-  createdAt   DateTime @default(now())
-  @@unique([userId, category, monthYear])
-  @@index([userId, monthYear])
-}
-
-model AssetLot {
-  id             String      @id @default(cuid())
-  symbol         String
-  isin           String?
-  assetType      AssetType
-  quantityUnits  Int
-  buyPricePaise  Int
-  buyDate        DateTime
-  remainingUnits Int
-  userId         String
-  user           User        @relation(fields: [userId], references: [id])
-  sales          AssetSale[]
-  createdAt      DateTime    @default(now())
-  @@index([userId, symbol])
-  @@index([userId, buyDate])
-}
-
-model AssetSale {
-  id              String    @id @default(cuid())
-  symbol          String
-  isin            String?
-  assetType       AssetType
-  quantityUnits   Int
-  sellPricePaise  Int
-  sellDate        DateTime
-  gainType        GainType
-  holdingDays     Int
-  gainAmountPaise Int
-  lotId           String
-  lot             AssetLot  @relation(fields: [lotId], references: [id])
-  userId          String
-  user            User      @relation(fields: [userId], references: [id])
-  createdAt       DateTime  @default(now())
-  @@index([userId, sellDate])
-  @@index([userId, gainType])
+  BOB
 }
 
 enum AssetType {
@@ -144,37 +177,10 @@ enum GainType {
   LTCG
 }
 
-model Reminder {
-  id        String       @id @default(cuid())
-  title     String
-  dueDate   DateTime
-  amount    Int?
-  type      ReminderType
-  isPaid    Boolean      @default(false)
-  userId    String
-  user      User         @relation(fields: [userId], references: [id])
-  createdAt DateTime     @default(now())
-  @@index([userId, dueDate])
-  @@index([userId, isPaid])
-}
-
 enum ReminderType {
   ADVANCE_TAX
   INSURANCE_PREMIUM
   OTHER
-}
-
-model TaxProfile {
-  id             String       @id @default(cuid())
-  financialYear  String
-  regime         TaxRegime
-  taxpayerType   TaxpayerType
-  incomeSource   String
-  tdsDeducted    Int          @default(0)
-  deductions     Json
-  userId         String       @unique
-  user           User         @relation(fields: [userId], references: [id])
-  updatedAt      DateTime     @updatedAt
 }
 
 enum TaxRegime {

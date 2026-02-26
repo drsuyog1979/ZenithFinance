@@ -1,9 +1,13 @@
-import { SpendeeImporter } from "@/components/import/SpendeeImporter";
-import { Upload } from "lucide-react";
+"use client";
 
-export const dynamic = "force-dynamic";
+import { useState } from "react";
+import { SpendeeImporter } from "@/components/import/SpendeeImporter";
+import { BankStatementImporter } from "@/components/import/BankStatementImporter";
+import { Upload, FileText, ArrowRightLeft } from "lucide-react";
 
 export default function ImportPage() {
+    const [importType, setImportType] = useState<"csv" | "pdf">("pdf");
+
     return (
         <div className="p-4 md:p-8 max-w-2xl mx-auto pb-24 md:pb-8">
             <div className="mb-8">
@@ -18,7 +22,30 @@ export default function ImportPage() {
                 <p className="text-gray-500 ml-13">Migrate your financial history into Zenith Finance.</p>
             </div>
 
-            <SpendeeImporter />
+            <div className="bg-white dark:bg-gray-900 p-1.5 rounded-2xl flex gap-1 mb-8 shadow-sm border border-gray-100 dark:border-gray-800">
+                <button
+                    onClick={() => setImportType("pdf")}
+                    className={`flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-xl text-sm font-semibold transition-all ${importType === "pdf"
+                        ? "bg-indigo-50 dark:bg-indigo-900/20 text-indigo-700 dark:text-indigo-400 shadow-sm"
+                        : "text-gray-500 hover:bg-gray-50 dark:hover:bg-gray-800"
+                        }`}
+                >
+                    <FileText size={18} />
+                    Bank Statements (PDF)
+                </button>
+                <button
+                    onClick={() => setImportType("csv")}
+                    className={`flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-xl text-sm font-semibold transition-all ${importType === "csv"
+                        ? "bg-purple-50 dark:bg-purple-900/20 text-purple-700 dark:text-purple-400 shadow-sm"
+                        : "text-gray-500 hover:bg-gray-50 dark:hover:bg-gray-800"
+                        }`}
+                >
+                    <ArrowRightLeft size={18} />
+                    Expenses / Spendee (CSV)
+                </button>
+            </div>
+
+            {importType === "csv" ? <SpendeeImporter /> : <BankStatementImporter />}
         </div>
     );
 }

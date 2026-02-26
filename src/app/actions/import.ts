@@ -207,6 +207,41 @@ function parseSpendeeDate(raw: string): Date | null {
     return null;
 }
 
+export async function checkDuplicates(rows: SpendeeRow[]): Promise<number> {
+    try {
+        const userId = await getUserAndEnsureExists();
+        if (rows.length === 0) return 0;
+
+        // Get the date range from rows
+        const earliest = new Date(Math.min(...rows.map(r => r.date.getTime())));
+        const latest = new Date(Math.max(...rows.map(r => r.date.getTime())));
+
+        // Fetch user's existing transactions in that range
+        const existingTxs = await prisma.transaction.findMany({
+            where: {
+                userId,
+                date: { gte: earliest, lte: latest }
+            },
+            select: { date: true, amount: true }
+        });
+
+        // Set for O(1) matching: YYYY-MM-DD_Amount
+        const existingSet = new Set(existingTxs.map(tx =>
+            `${tx.date.toISOString().split('T')[0]}_${tx.amount}`
+        ));
+
+        let matches = 0;
+        for (const row of rows) {
+            const key = `${row.date.toISOString().split('T')[0]}_${row.amount}`;
+            if (existingSet.has(key)) matches++;
+        }
+        return matches;
+    } catch (e) {
+        console.error("Duplicate check error:", e);
+        return 0;
+    }
+}
+
 // ── Commit import to database ───────────────────────────────────────────────
 export interface ImportResult {
     imported: number;
@@ -216,7 +251,7 @@ export interface ImportResult {
     importSessionId?: string;
 }
 
-export async function commitSpendeeImport(rows: SpendeeRow[]): Promise<ImportResult> {
+export async function commitSpendeeImport(rows: SpendeeRow[], source: ImportSource = ImportSource.SPENDEE): Promise<ImportResult> {
     try {
         const userId = await getUserAndEnsureExists();
 
@@ -243,18 +278,45 @@ export async function commitSpendeeImport(rows: SpendeeRow[]): Promise<ImportRes
         let skipped = 0;
 
         // Use a session ID to allow rollback
-        const importSessionId = `spendee_${Date.now()}`;
+        const importSessionId = `${source.toLowerCase()}_${Date.now()}`;
 
         for (const row of rows) {
             const walletId = walletMap.get(row.walletName.toLowerCase())!;
             try {
+                // Soft-match deduplication: skip if ANY transaction exists on this date with this amount
+                // User confirmed they never have two different entries of the same amount on the same day.
+                const existing = await prisma.transaction.findFirst({
+                    where: {
+                        userId,
+                        date: row.date,
+                        amount: row.amount,
+                    }
+                });
+
+                if (existing) {
+                    // Enriching logic: append bank reference to manual entry if not already there
+                    const bankRef = row.note ? `[${source}: ${row.note}]` : "";
+                    if (bankRef && (!existing.description || !existing.description.includes(row.note))) {
+                        const combinedDesc = existing.description
+                            ? `${existing.description} ${bankRef}`.substring(0, 1000)
+                            : bankRef;
+
+                        await prisma.transaction.update({
+                            where: { id: existing.id },
+                            data: { description: combinedDesc }
+                        });
+                    }
+                    skipped++;
+                    continue;
+                }
+
                 await prisma.transaction.create({
                     data: {
                         date: row.date,
                         amount: row.amount,
                         category: row.category,
                         description: row.note || null,
-                        source: ImportSource.SPENDEE,
+                        source: source,
                         type: row.type,
                         walletId,
                         userId,
@@ -279,16 +341,26 @@ export async function commitSpendeeImport(rows: SpendeeRow[]): Promise<ImportRes
     }
 }
 
-// ── Rollback: delete all SPENDEE transactions created after a timestamp ─────
-export async function rollbackSpendeeImport(afterTimestamp: string): Promise<{ deleted: number; error?: string }> {
+// ── Rollback: delete all transactions from a specific import session ─────────
+export async function rollbackSpendeeImport(sessionId: string): Promise<{ deleted: number; error?: string }> {
     try {
         const userId = await getUserAndEnsureExists();
-        const since = new Date(parseInt(afterTimestamp.replace("spendee_", "")));
+
+        // sessionId is formatted as "source_timestamp" e.g. "axis_1700000000000"
+        const parts = sessionId.split('_');
+        if (parts.length < 2) throw new Error("Invalid session ID format");
+
+        const sourceStr = parts[0].toUpperCase();
+        const timestamp = parseInt(parts[1]);
+        const since = new Date(timestamp);
+
+        // Map string to ImportSource enum
+        const source = (ImportSource as any)[sourceStr] || ImportSource.SPENDEE;
 
         const result = await prisma.transaction.deleteMany({
             where: {
                 userId,
-                source: ImportSource.SPENDEE,
+                source,
                 createdAt: { gte: since },
             }
         });
