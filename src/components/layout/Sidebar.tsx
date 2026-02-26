@@ -11,7 +11,6 @@ export function Sidebar() {
     { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
     { name: "Wallets", href: "/wallets", icon: Wallet },
     { name: "Transactions", href: "/transactions", icon: LayoutList },
-    { name: "Budgets", href: "/budgets", icon: Target },
     { name: "Analytics", href: "/analytics", icon: PieChart },
     { name: "Import Data", href: "/import", icon: Upload },
   ];
@@ -54,8 +53,8 @@ export function Sidebar() {
               key={item.name}
               href={item.href}
               className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${isActive
-                  ? "bg-blue-50 dark:bg-[#1a3c5e]/20 text-[var(--color-brand-navy)] dark:text-blue-400 font-medium"
-                  : "text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800/50 hover:text-gray-900 dark:hover:text-gray-200"
+                ? "bg-blue-50 dark:bg-[#1a3c5e]/20 text-[var(--color-brand-navy)] dark:text-blue-400 font-medium"
+                : "text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800/50 hover:text-gray-900 dark:hover:text-gray-200"
                 }`}
             >
               <Icon size={20} />
@@ -74,8 +73,8 @@ export function Sidebar() {
               key={item.name}
               href={item.href}
               className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${isActive
-                  ? "bg-blue-50 dark:bg-[#1a3c5e]/20 text-[var(--color-brand-navy)] dark:text-blue-400 font-medium"
-                  : "text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800/50 hover:text-gray-900 dark:hover:text-gray-200"
+                ? "bg-blue-50 dark:bg-[#1a3c5e]/20 text-[var(--color-brand-navy)] dark:text-blue-400 font-medium"
+                : "text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800/50 hover:text-gray-900 dark:hover:text-gray-200"
                 }`}
             >
               <Icon size={20} />

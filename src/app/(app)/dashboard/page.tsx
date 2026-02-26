@@ -115,7 +115,7 @@ export default function DashboardPage() {
                     summary: { totalBalance: income - expenses, income, expenses },
                     spendDonutData: spendData,
                     incomeDonutData: buildChartData(incomeCategoryMap),
-                    categoryData: spendData,
+                    categoryData: spendData.map(d => ({ category: d.name, amount: d.value, color: d.color })),
                     transactions: res.data.slice(0, 20),
                 });
             }
