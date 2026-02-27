@@ -33,14 +33,20 @@ export async function parseBankStatementCSV(formData: FormData): Promise<ParseRe
         const walletName = bank === 'axis' ? 'axissavings' : bank === 'bob' ? 'bob' : 'Other';
 
         // Find header row (some bank CSVs have junk lines at the top)
-        let headerIdx = 0;
-        for (let i = 0; i < Math.min(lines.length, 15); i++) {
+        let headerIdx = -1;
+        const headerKeywords = ['date', 'txn date', 'tran date', 'value date', 'particulars', 'narration', 'description', 'amount', 'withdrawal', 'deposit'];
+
+        for (let i = 0; i < Math.min(lines.length, 30); i++) {
             const l = lines[i].toLowerCase();
-            if ((l.includes('date') || l.includes('txn date')) && (l.includes('amount') || l.includes('withdrawal') || l.includes('deposit'))) {
+            const matches = headerKeywords.filter(k => l.includes(k));
+            // If line contains at least 3 distinct keywords, it's likely our header
+            if (matches.length >= 3) {
                 headerIdx = i;
                 break;
             }
         }
+
+        if (headerIdx === -1) headerIdx = 0; // Fallback to first line if no clear header found
 
         const headers = parseCSVLine(lines[headerIdx], separator).map(h => h.toLowerCase().trim());
         const getIdx = (keys: string[]) => headers.findIndex(h => keys.some(k => h.includes(k)));
@@ -155,14 +161,30 @@ function parseBankDate(dateStr: string): Date | null {
     if (!dateStr) return null;
     const cleaned = dateStr.replace(/"/g, '').trim();
 
-    // Try DD-MM-YYYY or DD/MM/YYYY
-    const dmy = cleaned.match(/^(\d{1,2})[-/](\d{1,2})[-/](\d{2,4})$/);
-    if (dmy) {
-        let day = parseInt(dmy[1], 10);
-        let month = parseInt(dmy[2], 10);
-        let year = parseInt(dmy[3], 10);
+    const months: Record<string, number> = {
+        jan: 0, feb: 1, mar: 2, apr: 3, may: 4, jun: 5,
+        jul: 6, aug: 7, sep: 8, oct: 9, nov: 10, dec: 11
+    };
+
+    // Try DD-MMM-YYYY or DD-MM-YYYY
+    const dmy = cleaned.split(/[-/]/);
+    if (dmy.length === 3) {
+        let day = parseInt(dmy[0], 10);
+        let month: number;
+        let year = parseInt(dmy[2], 10);
+
         if (year < 100) year += 2000;
-        return new Date(Date.UTC(year, month - 1, day, 0, 0, 0));
+
+        const monthPart = dmy[1].toLowerCase();
+        if (months[monthPart] !== undefined) {
+            month = months[monthPart];
+        } else {
+            month = parseInt(monthPart, 10) - 1;
+        }
+
+        if (!isNaN(day) && !isNaN(month) && !isNaN(year)) {
+            return new Date(Date.UTC(year, month, day, 0, 0, 0));
+        }
     }
 
     // Try YYYY-MM-DD

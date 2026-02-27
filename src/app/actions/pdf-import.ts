@@ -61,9 +61,9 @@ export async function parseBankStatementPDF(formData: FormData): Promise<ParseRe
         const walletName = bank === 'axis' ? 'axissavings' : bank === 'bob' ? 'bob' : 'Other';
 
         // Generic Indian Bank Statement regexes
-        // Matches: Date (DD-MM-YYYY or DD-Jan-2024), description, amount(s), Cr/Dr
+        // Matches: Date (DD-MM-YYYY, DD/MM/YYYY, DD-Jan-2024, DD Jan 2024)
         // We remove the ^ anchor to allow Serial Numbers or leading spaces
-        const DATE_PATTERN = /(\d{1,2}[-/](?:\d{1,2}|[a-z]{3})[-/]\d{2,4})/;
+        const DATE_PATTERN = /(\d{1,2}[-/ ](?:\d{1,2}|[a-z]{3})[-/ ]\d{2,4})/;
 
         for (let i = 0; i < lines.length; i++) {
             const line = lines[i];
@@ -78,8 +78,8 @@ export async function parseBankStatementPDF(formData: FormData): Promise<ParseRe
             if (!rest) continue;
 
             // Extract all numbers like "1,000.00" or "1000.00" or "1000"
-            // Also optional Cr/Dr
-            const amountMatches = [...rest.matchAll(/([\d,]+\.\d{2}|[\d,]+)\s*(Cr|Dr)?/gi)];
+            // Also optional Cr/Dr and optional currency symbol
+            const amountMatches = [...rest.matchAll(/(?:₹\s*)?([\d,]+\.\d{2}|[\d,]+)\s*(Cr|Dr)?/gi)];
 
             if (amountMatches.length >= 1) {
                 // The description is everything between the date and the first amount
@@ -87,12 +87,10 @@ export async function parseBankStatementPDF(formData: FormData): Promise<ParseRe
                 const firstAmountIndex = rest.indexOf(firstAmountMatch[0]);
                 let description = rest.substring(0, firstAmountIndex).trim();
 
-                // If description is empty or very short, it might be a multi-line transaction
-                // or the serial number was before the date.
-
                 // Axis bank often starts with two dates: 01-01-2026 01-01-2026 ...
-                if (description.match(/^(\d{1,2}[-/](?:\d{1,2}|[a-z]{3})[-/]\d{2,4})\s+/)) {
-                    description = description.replace(/^(\d{1,2}[-/](?:\d{1,2}|[a-z]{3})[-/]\d{2,4})\s+/, '');
+                // Use a more relaxed check for redundant dates in the description
+                if (description.match(/^(\d{1,2}[-/ ](?:\d{1,2}|[a-z]{3})[-/ ]\d{2,4})/)) {
+                    description = description.replace(/^(\d{1,2}[-/ ](?:\d{1,2}|[a-z]{3})[-/ ]\d{2,4})\s*/, '');
                 }
 
                 let amount = 0;
@@ -104,25 +102,23 @@ export async function parseBankStatementPDF(formData: FormData): Promise<ParseRe
                     amount = parseFloat(amtMatch[1].replace(/,/g, ''));
                     const suffix = amtMatch[2]?.toUpperCase();
 
-                    if (suffix === 'CR' || descLow.includes('deposit') || descLow.includes('neft cr') || descLow.includes('upi/cr')) {
+                    if (suffix === 'CR' || descLow.includes('deposit') || descLow.includes('neft cr') || descLow.includes('upi/cr') || descLow.includes('credit')) {
                         type = TransactionType.INCOME;
                     } else {
                         type = TransactionType.EXPENSE;
                     }
                 } else if (bank === 'bob') {
-                    // BoB often has columns for Withdrawal and Deposit
-                    // If we see two amounts, and the second one is Cr/Dr, or if we guess based on context
                     const parsedVal = parseFloat(amountMatches[0][1].replace(/,/g, ''));
                     amount = parsedVal;
 
-                    if (descLow.includes('/cr') || descLow.includes('deposit') || descLow.includes('neft cr') || descLow.includes('upi/cr')) {
+                    if (descLow.includes('/cr') || descLow.includes('deposit') || descLow.includes('neft cr') || descLow.includes('upi/cr') || descLow.includes('credit')) {
                         type = TransactionType.INCOME;
                     } else {
                         type = TransactionType.EXPENSE;
                     }
                 } else {
                     amount = parseFloat(amountMatches[0][1].replace(/,/g, ''));
-                    if (descLow.includes('cr') || descLow.includes('deposit')) {
+                    if (descLow.includes('cr') || descLow.includes('deposit') || descLow.includes('credit')) {
                         type = TransactionType.INCOME;
                     } else {
                         type = TransactionType.EXPENSE;
@@ -133,11 +129,12 @@ export async function parseBankStatementPDF(formData: FormData): Promise<ParseRe
                     const parsedDate = parseDate(dateStr);
                     if (parsedDate) {
                         let category = "Other";
-                        if (descLow.includes("swiggy") || descLow.includes("zomato")) category = "Food & Dining";
+                        if (descLow.includes("swiggy") || descLow.includes("zomato")) category = "Food & Drink";
                         else if (descLow.includes("amazon") || descLow.includes("flipkart")) category = "Shopping";
                         else if (descLow.includes("netflix") || descLow.includes("spotify")) category = "Subscriptions";
                         else if (descLow.includes("uber") || descLow.includes("ola")) category = "Transport";
-                        else if (descLow.includes("salary")) category = "Income";
+                        else if (descLow.includes("salary")) category = "Salary";
+                        else if (descLow.includes("mutual fund") || descLow.includes("investment")) category = "Mutual Funds";
 
                         rows.push({
                             date: parsedDate,
