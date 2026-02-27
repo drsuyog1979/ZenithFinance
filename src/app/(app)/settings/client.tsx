@@ -5,7 +5,9 @@ import Link from "next/link";
 import {
     Moon, Sun, Monitor, Download, Cloud, Tag, IndianRupee, LogOut, ChevronRight,
     ChevronDown, Loader2, Check, Utensils, Car, Zap, Tv, Briefcase, X, Plus,
-    Lock, Trash2, TrendingUp, Phone, Banknote, Fuel
+    Lock, Trash2, TrendingUp, Phone, Banknote, Fuel, Edit2, Palette,
+    ShoppingBag, Heart, Coffee, Gamepad2, Plane, Gift, GraduationCap,
+    Dumbbell, Beer, Music, Camera, Globe
 } from "lucide-react";
 import { createClient } from "@/utils/supabase/client";
 import { useRouter } from "next/navigation";
@@ -32,6 +34,41 @@ export function SettingsClient({ userEmail }: { userEmail: string }) {
     const [resetError, setResetError] = useState("");
     const [userCategories, setUserCategories] = useState<any[]>([]);
     const [newCategory, setNewCategory] = useState("");
+    const [newIcon, setNewIcon] = useState("Tag");
+    const [editingCategory, setEditingCategory] = useState<string | null>(null);
+    const [editName, setEditName] = useState("");
+    const [editColor, setEditColor] = useState("#9333ea");
+    const [editIcon, setEditIcon] = useState("Tag");
+    const [showIconPicker, setShowIconPicker] = useState<string | null>(null); // 'new' or category name
+
+    const ICON_OPTIONS = [
+        { name: "Tag", icon: Tag },
+        { name: "Utensils", icon: Utensils },
+        { name: "Car", icon: Car },
+        { name: "Zap", icon: Zap },
+        { name: "Tv", icon: Tv },
+        { name: "Briefcase", icon: Briefcase },
+        { name: "TrendingUp", icon: TrendingUp },
+        { name: "Phone", icon: Phone },
+        { name: "Banknote", icon: Banknote },
+        { name: "ShoppingBag", icon: ShoppingBag },
+        { name: "Heart", icon: Heart },
+        { name: "Coffee", icon: Coffee },
+        { name: "Gamepad2", icon: Gamepad2 },
+        { name: "Plane", icon: Plane },
+        { name: "Gift", icon: Gift },
+        { name: "GraduationCap", icon: GraduationCap },
+        { name: "Dumbbell", icon: Dumbbell },
+        { name: "Beer", icon: Beer },
+        { name: "Music", icon: Music },
+        { name: "Camera", icon: Camera },
+        { name: "Globe", icon: Globe },
+    ];
+
+    const getIconComponent = (iconName: string) => {
+        const option = ICON_OPTIONS.find(o => o.name === iconName);
+        return option ? option.icon : Tag;
+    };
 
     // Load theme from localStorage on mount
     useEffect(() => {
@@ -64,25 +101,34 @@ export function SettingsClient({ userEmail }: { userEmail: string }) {
         try {
             const saved = localStorage.getItem("zenith-categories-v2");
             if (saved) {
-                setUserCategories(JSON.parse(saved));
+                const parsed = JSON.parse(saved);
+                // Ensure icons are strings
+                const normalized = parsed.map((c: any) => ({
+                    ...c,
+                    icon: typeof c.icon === 'string' ? c.icon : 'Tag'
+                }));
+                setUserCategories(normalized);
             } else {
-                // Check legacy format
+                // ... legacy logic ...
                 const legacy = localStorage.getItem("zenith-custom-categories");
                 if (legacy) {
                     const customNames = JSON.parse(legacy) as string[];
-                    const merged = [...CATEGORY_DEFAULTS];
+                    const merged = [...CATEGORY_DEFAULTS].map(c => ({ ...c, icon: (c.icon as any).name || 'Tag' }));
                     customNames.forEach(name => {
                         if (!merged.find(c => c.name.toLowerCase() === name.toLowerCase())) {
-                            merged.push({ name, color: "#9333ea", icon: Tag });
+                            merged.push({ name, color: "#9333ea", icon: 'Tag' });
                         }
                     });
                     setUserCategories(merged);
                 } else {
-                    setUserCategories(CATEGORY_DEFAULTS);
+                    setUserCategories(CATEGORY_DEFAULTS.map(c => ({
+                        ...c,
+                        icon: (c.icon as any).displayName || (c.icon as any).name || 'Tag'
+                    })));
                 }
             }
         } catch {
-            setUserCategories(CATEGORY_DEFAULTS);
+            setUserCategories(CATEGORY_DEFAULTS.map(c => ({ ...c, icon: 'Tag' })));
         }
     }, []);
 
@@ -91,19 +137,39 @@ export function SettingsClient({ userEmail }: { userEmail: string }) {
         if (!name) return;
         if (userCategories.find(c => c.name.toLowerCase() === name.toLowerCase())) return;
 
-        const updated = [...userCategories, { name, color: "#9333ea", icon: Tag }];
+        const updated = [...userCategories, { name, color: "#9333ea", icon: newIcon }];
+        saveCategories(updated);
+        setNewCategory("");
+        setNewIcon("Tag");
+    };
+
+    const saveCategories = (updated: any[]) => {
         setUserCategories(updated);
         localStorage.setItem("zenith-categories-v2", JSON.stringify(updated));
-        // Also update legacy for backward compatibility with other components
         localStorage.setItem("zenith-custom-categories", JSON.stringify(updated.map(c => c.name)));
-        setNewCategory("");
     };
 
     const removeCategory = (name: string) => {
         const updated = userCategories.filter(c => c.name !== name);
-        setUserCategories(updated);
-        localStorage.setItem("zenith-categories-v2", JSON.stringify(updated));
-        localStorage.setItem("zenith-custom-categories", JSON.stringify(updated.map(c => c.name)));
+        saveCategories(updated);
+    };
+
+    const startEditing = (cat: any) => {
+        setEditingCategory(cat.name);
+        setEditName(cat.name);
+        setEditColor(cat.color || "#9333ea");
+        setEditIcon(typeof cat.icon === 'string' ? cat.icon : 'Tag');
+    };
+
+    const saveEdit = () => {
+        if (!editName.trim()) return;
+        const updated = userCategories.map(c =>
+            c.name === editingCategory
+                ? { ...c, name: editName.trim(), color: editColor, icon: editIcon }
+                : c
+        );
+        saveCategories(updated);
+        setEditingCategory(null);
     };
 
     const handleCurrencySelect = (code: string) => {
@@ -258,48 +324,152 @@ export function SettingsClient({ userEmail }: { userEmail: string }) {
                             <div className="border-t border-gray-100 dark:border-gray-800 px-6 pb-5">
 
                                 {/* Add new category */}
-                                <div className="flex gap-2 py-4">
-                                    <input
-                                        type="text"
-                                        value={newCategory}
-                                        onChange={(e) => setNewCategory(e.target.value)}
-                                        onKeyDown={(e) => { if (e.key === "Enter") addCategory(); }}
-                                        placeholder="Add new category..."
-                                        className="flex-1 px-4 py-2.5 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-sm focus:ring-2 focus:ring-[var(--color-brand-navy)] outline-none"
-                                    />
-                                    <button
-                                        onClick={addCategory}
-                                        disabled={!newCategory.trim()}
-                                        className="px-4 py-2.5 bg-[var(--color-brand-navy)] text-white rounded-xl flex items-center gap-1.5 text-sm font-medium hover:opacity-90 transition-opacity disabled:opacity-40"
-                                    >
-                                        <Plus size={16} />
-                                        Add
-                                    </button>
+                                <div className="space-y-3 py-4">
+                                    <div className="flex gap-2">
+                                        <button
+                                            onClick={() => setShowIconPicker(showIconPicker === 'new' ? null : 'new')}
+                                            className="w-11 h-11 flex items-center justify-center bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-gray-400 hover:text-[var(--color-brand-navy)] transition-colors"
+                                            title="Select Icon"
+                                        >
+                                            {(() => {
+                                                const IconComp = getIconComponent(newIcon);
+                                                return <IconComp size={20} />;
+                                            })()}
+                                        </button>
+                                        <input
+                                            type="text"
+                                            value={newCategory}
+                                            onChange={(e) => setNewCategory(e.target.value)}
+                                            onKeyDown={(e) => { if (e.key === "Enter") addCategory(); }}
+                                            placeholder="Add new category..."
+                                            aria-label="New category name"
+                                            className="flex-1 px-4 py-2.5 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-sm focus:ring-2 focus:ring-[var(--color-brand-navy)] outline-none"
+                                        />
+                                        <button
+                                            onClick={addCategory}
+                                            disabled={!newCategory.trim()}
+                                            className="px-4 py-2.5 bg-[var(--color-brand-navy)] text-white rounded-xl flex items-center gap-1.5 text-sm font-medium hover:opacity-90 transition-opacity disabled:opacity-40"
+                                        >
+                                            <Plus size={16} />
+                                            Add
+                                        </button>
+                                    </div>
+
+                                    {showIconPicker === 'new' && (
+                                        <div className="p-3 bg-gray-50 dark:bg-gray-800 rounded-xl border border-gray-100 dark:border-gray-700 grid grid-cols-7 gap-2">
+                                            {ICON_OPTIONS.map(opt => (
+                                                <button
+                                                    key={opt.name}
+                                                    onClick={() => { setNewIcon(opt.name); setShowIconPicker(null); }}
+                                                    className={`p-2 rounded-lg flex items-center justify-center transition-all ${newIcon === opt.name ? 'bg-white dark:bg-gray-700 shadow-sm text-[var(--color-brand-navy)]' : 'text-gray-400 hover:bg-white/50 dark:hover:bg-gray-700/50'}`}
+                                                >
+                                                    <opt.icon size={18} />
+                                                </button>
+                                            ))}
+                                        </div>
+                                    )}
                                 </div>
 
-                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                <div className="grid grid-cols-1 gap-2">
                                     {userCategories.map(cat => {
-                                        const Icon = cat.icon || Tag;
+                                        const IconComp = getIconComponent(cat.icon);
+                                        const isEditing = editingCategory === cat.name;
+
+                                        if (isEditing) {
+                                            return (
+                                                <div key={cat.name} className="p-3 rounded-xl bg-gray-50 dark:bg-gray-800 border border-[var(--color-brand-navy)]/30 space-y-3">
+                                                    <div className="flex gap-2">
+                                                        <button
+                                                            onClick={() => setShowIconPicker(showIconPicker === cat.name ? null : cat.name)}
+                                                            className="w-10 h-10 flex items-center justify-center bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg text-gray-500 hover:text-blue-500 transition-colors"
+                                                        >
+                                                            {(() => {
+                                                                const EditIconComp = getIconComponent(editIcon);
+                                                                return <EditIconComp size={18} />;
+                                                            })()}
+                                                        </button>
+                                                        <input
+                                                            type="text"
+                                                            value={editName}
+                                                            onChange={(e) => setEditName(e.target.value)}
+                                                            aria-label="Edit category name"
+                                                            className="flex-1 px-3 py-1.5 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg text-sm outline-none focus:ring-2 focus:ring-[var(--color-brand-navy)]"
+                                                            autoFocus
+                                                        />
+                                                        <div className="flex items-center gap-2 px-2 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg">
+                                                            <Palette size={14} className="text-gray-400" />
+                                                            <input
+                                                                type="color"
+                                                                value={editColor}
+                                                                onChange={(e) => setEditColor(e.target.value)}
+                                                                title="Select category color"
+                                                                aria-label="Select category color"
+                                                                className="w-6 h-6 border-0 bg-transparent cursor-pointer"
+                                                            />
+                                                        </div>
+                                                    </div>
+
+                                                    {showIconPicker === cat.name && (
+                                                        <div className="p-2 bg-white dark:bg-gray-900 rounded-xl border border-gray-100 dark:border-gray-700 grid grid-cols-7 gap-2">
+                                                            {ICON_OPTIONS.map(opt => (
+                                                                <button
+                                                                    key={opt.name}
+                                                                    onClick={() => { setEditIcon(opt.name); setShowIconPicker(null); }}
+                                                                    className={`p-2 rounded-lg flex items-center justify-center transition-all ${editIcon === opt.name ? 'bg-blue-50 dark:bg-blue-900/40 text-blue-500' : 'text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800'}`}
+                                                                >
+                                                                    <opt.icon size={16} />
+                                                                </button>
+                                                            ))}
+                                                        </div>
+                                                    )}
+
+                                                    <div className="flex justify-end gap-2">
+                                                        <button
+                                                            onClick={() => { setEditingCategory(null); setShowIconPicker(null); }}
+                                                            className="px-3 py-1.5 text-xs font-medium text-gray-500 hover:text-gray-700 dark:hover:text-gray-300"
+                                                        >
+                                                            Cancel
+                                                        </button>
+                                                        <button
+                                                            onClick={saveEdit}
+                                                            className="px-3 py-1.5 bg-[var(--color-brand-navy)] text-white rounded-lg text-xs font-medium"
+                                                        >
+                                                            Save Changes
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            );
+                                        }
+
                                         return (
                                             <div
                                                 key={cat.name}
-                                                className="flex items-center gap-3 p-3 rounded-xl bg-gray-50 dark:bg-gray-800/50 group"
+                                                className="flex items-center gap-3 p-3 rounded-xl bg-gray-50 dark:bg-gray-800/50 group hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
                                             >
                                                 <div
-                                                    className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 dynamic-bg-light dynamic-text"
+                                                    className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
                                                     style={{ backgroundColor: `${cat.color}20`, color: cat.color }}
                                                 >
-                                                    <Icon size={16} />
+                                                    <IconComp size={16} />
                                                 </div>
                                                 <span className="text-sm font-medium text-gray-900 dark:text-gray-100 flex-1">{cat.name}</span>
-                                                <button
-                                                    onClick={() => removeCategory(cat.name)}
-                                                    className="p-1 text-gray-400 hover:text-red-500 transition-colors rounded opacity-0 group-hover:opacity-100 sm:opacity-100"
-                                                    title={`Remove ${cat.name}`}
-                                                    aria-label={`Remove category ${cat.name}`}
-                                                >
-                                                    <Trash2 size={14} />
-                                                </button>
+                                                <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                    <button
+                                                        onClick={() => startEditing(cat)}
+                                                        className="p-1.5 text-gray-400 hover:text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors"
+                                                        title={`Edit ${cat.name}`}
+                                                    >
+                                                        <Edit2 size={14} />
+                                                    </button>
+                                                    <button
+                                                        onClick={() => removeCategory(cat.name)}
+                                                        className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
+                                                        title={`Remove ${cat.name}`}
+                                                        aria-label={`Remove category ${cat.name}`}
+                                                    >
+                                                        <Trash2 size={14} />
+                                                    </button>
+                                                </div>
                                             </div>
                                         );
                                     })}

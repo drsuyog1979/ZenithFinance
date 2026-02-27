@@ -1,6 +1,6 @@
 "use server";
 
-import pdfParse from 'pdf-parse';
+import pdfParse from 'pdf-parse/lib/pdf-parse.js';
 import { TransactionType } from '@prisma/client';
 import { ParseResult, SpendeeRow } from './import'; // reusing types
 
@@ -37,7 +37,7 @@ export async function parseBankStatementPDF(formData: FormData): Promise<ParseRe
         const data = await pdfParse(buffer);
         const text = data.text;
 
-        const lines = text.split(/\r?\n/).map(l => l.trim()).filter(l => l);
+        const lines = text.split(/\r?\n/).map((l: string) => l.trim()).filter((l: string) => l);
 
         const rows: SpendeeRow[] = [];
         let earliest: Date | null = null;

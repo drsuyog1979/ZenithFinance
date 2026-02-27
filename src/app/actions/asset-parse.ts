@@ -1,6 +1,6 @@
 "use server";
 
-import pdfParse from 'pdf-parse';
+import pdfParse from 'pdf-parse/lib/pdf-parse.js';
 import { AssetType } from '@prisma/client';
 import { AssetTransaction } from './assets';
 
@@ -58,7 +58,7 @@ export async function parseAssetStatement(formData: FormData): Promise<{
  * Look for: 01-Jan-2024 Purchase/Redemption SchemeName Units Price Amount
  */
 function parseCAMSPDF(text: string): AssetTransaction[] {
-    const lines = text.split(/\r?\n/).map(l => l.trim()).filter(l => l);
+    const lines = text.split(/\r?\n/).map((l: string) => l.trim()).filter((l: string) => l);
     const result: AssetTransaction[] = [];
 
     // Pattern: Date | Desc/Scheme | Units | Price | Amount
