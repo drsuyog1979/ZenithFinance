@@ -17,27 +17,7 @@ function hashColor(str: string): string {
     return `hsl(${hue}, 65%, 55%)`;
 }
 import { deleteTransaction, updateTransaction } from "@/app/actions/transactions";
-
-// ── Default built-in categories ─────────────────────────────────────────────
-const DEFAULT_CATEGORIES = [
-    "Clinic", "Baramati", "Mutual Funds", "Petrol", "Salary",
-    "Food & Drink", "Electricity Bill", "App Purchase", "Apollo",
-    "Inamdar", "Sahyadri Deccan", "Sahyadri Bibwewadi",
-    "MNGL", "VI", "Landline", "Other"
-];
-
-function loadCategories(): string[] {
-    if (typeof window === "undefined") return DEFAULT_CATEGORIES;
-    try {
-        const saved = localStorage.getItem("zenith-custom-categories");
-        if (saved) {
-            const custom = JSON.parse(saved) as string[];
-            // Merge default + custom, deduplicate
-            return [...new Set([...DEFAULT_CATEGORIES, ...custom])];
-        }
-    } catch { }
-    return DEFAULT_CATEGORIES;
-}
+import { CATEGORY_DEFAULTS } from "@/lib/constants";
 
 // ── Component ───────────────────────────────────────────────────────────────
 export function TransactionList({
@@ -62,10 +42,15 @@ export function TransactionList({
     const [editingTx, setEditingTx] = useState<any | null>(null);
     const [editForm, setEditForm] = useState({ amount: "", category: "", description: "", type: "", date: "", walletId: "" });
     const [isSaving, setIsSaving] = useState(false);
-    const [allCategories, setAllCategories] = useState<string[]>(DEFAULT_CATEGORIES);
+    const [allCategories, setAllCategories] = useState<any[]>(CATEGORY_DEFAULTS);
 
     useEffect(() => {
-        setAllCategories(loadCategories());
+        try {
+            const saved = localStorage.getItem("zenith-categories-v2");
+            if (saved) {
+                setAllCategories(JSON.parse(saved));
+            }
+        } catch { }
     }, []);
 
     const formatINR = (value: number) => {
@@ -77,6 +62,9 @@ export function TransactionList({
     };
 
     const getIcon = (category: string) => {
+        const found = allCategories.find(c => c.name === category);
+        if (found?.icon) return found.icon;
+
         switch (category) {
             case "Food & Dining": case "Food & Drink": case "Food & Drinks": return Utensils;
             case "Transport": case "Petrol": return Car;
@@ -95,6 +83,9 @@ export function TransactionList({
     };
 
     const getColor = (category: string) => {
+        const found = allCategories.find(c => c.name === category);
+        if (found?.color) return found.color;
+
         const map: Record<string, string> = {
             "Food & Dining": "#f97316", "Food & Drink": "#f97316", "Food & Drinks": "#f97316",
             "Transport": "#3b82f6", "Petrol": "#3b82f6",
@@ -297,16 +288,16 @@ export function TransactionList({
                         <div>
                             <label className="text-sm font-medium text-gray-700 dark:text-gray-300 block mb-1.5">Category</label>
                             <select
-                                value={allCategories.includes(editForm.category) ? editForm.category : "__custom__"}
+                                value={allCategories.some(c => c.name === editForm.category) ? editForm.category : "__custom__"}
                                 onChange={(e) => setEditForm({ ...editForm, category: e.target.value })}
                                 className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-[var(--color-brand-navy)] outline-none"
                                 aria-label="Category"
                                 title="Category"
                             >
                                 {allCategories.map(c => (
-                                    <option key={c} value={c}>{c}</option>
+                                    <option key={c.name} value={c.name}>{c.name}</option>
                                 ))}
-                                {!allCategories.includes(editForm.category) && (
+                                {!allCategories.some(c => c.name === editForm.category) && (
                                     <option value={editForm.category}>{editForm.category} (custom)</option>
                                 )}
                             </select>

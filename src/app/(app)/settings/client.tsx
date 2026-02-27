@@ -11,32 +11,13 @@ import { createClient } from "@/utils/supabase/client";
 import { useRouter } from "next/navigation";
 import { resetAllUserData } from "@/app/actions/import";
 
-const CATEGORIES = [
-    { name: "Clinic", color: "#10b981", icon: Briefcase },
-    { name: "Baramati", color: "#14b8a6", icon: Briefcase },
-    { name: "Mutual Funds", color: "#0ea5e9", icon: TrendingUp },
-    { name: "Petrol", color: "#3b82f6", icon: Car },
-    { name: "Salary", color: "#ef4444", icon: Banknote },
-    { name: "Food & Drink", color: "#f97316", icon: Utensils },
-    { name: "Electricity Bill", color: "#eab308", icon: Zap },
-    { name: "App Purchase", color: "#8b5cf6", icon: Tv },
-    { name: "Apollo", color: "#06b6d4", icon: Briefcase },
-    { name: "Inamdar", color: "#0891b2", icon: Briefcase },
-    { name: "Sahyadri Deccan", color: "#2dd4bf", icon: Briefcase },
-    { name: "Sahyadri Bibwewadi", color: "#34d399", icon: Briefcase },
-    { name: "MNGL", color: "#f59e0b", icon: Zap },
-    { name: "VI", color: "#a855f7", icon: Phone },
-    { name: "Landline", color: "#d97706", icon: Phone },
-];
+import { CATEGORY_DEFAULTS } from "@/lib/constants";
 
 const CURRENCIES = [
-    { code: "INR", name: "Indian Rupee", symbol: "₹" },
-    { code: "USD", name: "US Dollar", symbol: "$" },
-    { code: "EUR", name: "Euro", symbol: "€" },
-    { code: "GBP", name: "British Pound", symbol: "£" },
-    { code: "JPY", name: "Japanese Yen", symbol: "¥" },
-    { code: "AED", name: "UAE Dirham", symbol: "د.إ" },
-    { code: "SGD", name: "Singapore Dollar", symbol: "S$" },
+    { code: 'INR', name: 'Indian Rupee', symbol: '₹' },
+    { code: 'USD', name: 'US Dollar', symbol: '$' },
+    { code: 'EUR', name: 'Euro', symbol: '€' },
+    { code: 'GBP', name: 'British Pound', symbol: '£' },
 ];
 
 export function SettingsClient({ userEmail }: { userEmail: string }) {
@@ -49,7 +30,7 @@ export function SettingsClient({ userEmail }: { userEmail: string }) {
     const [resetStep, setResetStep] = useState<"idle" | "confirm" | "deleting" | "done">("idle");
     const [resetResult, setResetResult] = useState<{ transactions: number; wallets: number; budgets: number } | null>(null);
     const [resetError, setResetError] = useState("");
-    const [customCategories, setCustomCategories] = useState<string[]>([]);
+    const [userCategories, setUserCategories] = useState<any[]>([]);
     const [newCategory, setNewCategory] = useState("");
 
     // Load theme from localStorage on mount
@@ -78,29 +59,51 @@ export function SettingsClient({ userEmail }: { userEmail: string }) {
         if (saved) setSelectedCurrency(saved);
     }, []);
 
-    // Load custom categories from localStorage
+    // Load categories from localStorage or use defaults
     useEffect(() => {
         try {
-            const saved = localStorage.getItem("zenith-custom-categories");
-            if (saved) setCustomCategories(JSON.parse(saved));
-        } catch { }
+            const saved = localStorage.getItem("zenith-categories-v2");
+            if (saved) {
+                setUserCategories(JSON.parse(saved));
+            } else {
+                // Check legacy format
+                const legacy = localStorage.getItem("zenith-custom-categories");
+                if (legacy) {
+                    const customNames = JSON.parse(legacy) as string[];
+                    const merged = [...CATEGORY_DEFAULTS];
+                    customNames.forEach(name => {
+                        if (!merged.find(c => c.name.toLowerCase() === name.toLowerCase())) {
+                            merged.push({ name, color: "#9333ea", icon: Tag });
+                        }
+                    });
+                    setUserCategories(merged);
+                } else {
+                    setUserCategories(CATEGORY_DEFAULTS);
+                }
+            }
+        } catch {
+            setUserCategories(CATEGORY_DEFAULTS);
+        }
     }, []);
 
-    const addCustomCategory = () => {
+    const addCategory = () => {
         const name = newCategory.trim();
         if (!name) return;
-        const builtInNames = CATEGORIES.map(c => c.name.toLowerCase());
-        if (builtInNames.includes(name.toLowerCase()) || customCategories.map(c => c.toLowerCase()).includes(name.toLowerCase())) return;
-        const updated = [...customCategories, name];
-        setCustomCategories(updated);
-        localStorage.setItem("zenith-custom-categories", JSON.stringify(updated));
+        if (userCategories.find(c => c.name.toLowerCase() === name.toLowerCase())) return;
+
+        const updated = [...userCategories, { name, color: "#9333ea", icon: Tag }];
+        setUserCategories(updated);
+        localStorage.setItem("zenith-categories-v2", JSON.stringify(updated));
+        // Also update legacy for backward compatibility with other components
+        localStorage.setItem("zenith-custom-categories", JSON.stringify(updated.map(c => c.name)));
         setNewCategory("");
     };
 
-    const removeCustomCategory = (name: string) => {
-        const updated = customCategories.filter(c => c !== name);
-        setCustomCategories(updated);
-        localStorage.setItem("zenith-custom-categories", JSON.stringify(updated));
+    const removeCategory = (name: string) => {
+        const updated = userCategories.filter(c => c.name !== name);
+        setUserCategories(updated);
+        localStorage.setItem("zenith-categories-v2", JSON.stringify(updated));
+        localStorage.setItem("zenith-custom-categories", JSON.stringify(updated.map(c => c.name)));
     };
 
     const handleCurrencySelect = (code: string) => {
@@ -187,7 +190,7 @@ export function SettingsClient({ userEmail }: { userEmail: string }) {
                         <button
                             onClick={() => { setShowCurrency(!showCurrency); setShowCategories(false); }}
                             className="w-full p-6 flex items-center justify-between hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors text-left"
-                            aria-expanded={showCurrency ? "true" : "false"}
+                            aria-expanded={showCurrency}
                         >
                             <div className="flex items-center gap-4">
                                 <div className="w-10 h-10 rounded-xl bg-orange-50 dark:bg-orange-900/20 text-orange-500 flex items-center justify-center">
@@ -234,7 +237,7 @@ export function SettingsClient({ userEmail }: { userEmail: string }) {
                         <button
                             onClick={() => { setShowCategories(!showCategories); setShowCurrency(false); }}
                             className="w-full p-6 flex items-center justify-between hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors text-left"
-                            aria-expanded={showCategories ? "true" : "false"}
+                            aria-expanded={showCategories}
                         >
                             <div className="flex items-center gap-4">
                                 <div className="w-10 h-10 rounded-xl bg-purple-50 dark:bg-purple-900/20 text-purple-500 flex items-center justify-center">
@@ -242,7 +245,7 @@ export function SettingsClient({ userEmail }: { userEmail: string }) {
                                 </div>
                                 <div>
                                     <p className="font-semibold text-gray-900 dark:text-gray-100">Manage Categories</p>
-                                    <p className="text-sm text-gray-500">{CATEGORIES.length} built-in + {customCategories.length} custom</p>
+                                    <p className="text-sm text-gray-500">{userCategories.length} active categories</p>
                                 </div>
                             </div>
                             {showCategories
@@ -260,12 +263,12 @@ export function SettingsClient({ userEmail }: { userEmail: string }) {
                                         type="text"
                                         value={newCategory}
                                         onChange={(e) => setNewCategory(e.target.value)}
-                                        onKeyDown={(e) => { if (e.key === "Enter") addCustomCategory(); }}
+                                        onKeyDown={(e) => { if (e.key === "Enter") addCategory(); }}
                                         placeholder="Add new category..."
                                         className="flex-1 px-4 py-2.5 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-sm focus:ring-2 focus:ring-[var(--color-brand-navy)] outline-none"
                                     />
                                     <button
-                                        onClick={addCustomCategory}
+                                        onClick={addCategory}
                                         disabled={!newCategory.trim()}
                                         className="px-4 py-2.5 bg-[var(--color-brand-navy)] text-white rounded-xl flex items-center gap-1.5 text-sm font-medium hover:opacity-90 transition-opacity disabled:opacity-40"
                                     >
@@ -274,60 +277,36 @@ export function SettingsClient({ userEmail }: { userEmail: string }) {
                                     </button>
                                 </div>
 
-                                {/* Built-in */}
-                                <p className="text-xs text-gray-400 pb-2 uppercase font-semibold tracking-wider">Built-in</p>
-                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-4">
-                                    {CATEGORIES.map(cat => {
-                                        const Icon = cat.icon;
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                    {userCategories.map(cat => {
+                                        const Icon = cat.icon || Tag;
                                         return (
                                             <div
                                                 key={cat.name}
-                                                className="flex items-center gap-3 p-3 rounded-xl bg-gray-50 dark:bg-gray-800/50"
+                                                className="flex items-center gap-3 p-3 rounded-xl bg-gray-50 dark:bg-gray-800/50 group"
                                             >
                                                 <div
                                                     className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 dynamic-bg-light dynamic-text"
-                                                    style={{ "--dynamic-color": cat.color } as React.CSSProperties}
+                                                    style={{ backgroundColor: `${cat.color}20`, color: cat.color }}
                                                 >
                                                     <Icon size={16} />
                                                 </div>
                                                 <span className="text-sm font-medium text-gray-900 dark:text-gray-100 flex-1">{cat.name}</span>
-                                                <Lock size={12} className="text-gray-300 dark:text-gray-600" />
+                                                <button
+                                                    onClick={() => removeCategory(cat.name)}
+                                                    className="p-1 text-gray-400 hover:text-red-500 transition-colors rounded opacity-0 group-hover:opacity-100 sm:opacity-100"
+                                                    title={`Remove ${cat.name}`}
+                                                    aria-label={`Remove category ${cat.name}`}
+                                                >
+                                                    <Trash2 size={14} />
+                                                </button>
                                             </div>
                                         );
                                     })}
                                 </div>
-
-                                {/* Custom */}
-                                {customCategories.length > 0 && (
-                                    <>
-                                        <p className="text-xs text-gray-400 pb-2 uppercase font-semibold tracking-wider">Custom</p>
-                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                                            {customCategories.map(name => (
-                                                <div
-                                                    key={name}
-                                                    className="flex items-center gap-3 p-3 rounded-xl bg-purple-50/50 dark:bg-purple-900/10 border border-purple-100 dark:border-purple-900/30"
-                                                >
-                                                    <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 bg-purple-100 dark:bg-purple-900/30 text-purple-500">
-                                                        <Tag size={16} />
-                                                    </div>
-                                                    <span className="text-sm font-medium text-gray-900 dark:text-gray-100 flex-1">{name}</span>
-                                                    <button
-                                                        onClick={() => removeCustomCategory(name)}
-                                                        className="p-1 text-gray-400 hover:text-red-500 transition-colors rounded"
-                                                        title={`Remove ${name}`}
-                                                        aria-label={`Remove category ${name}`}
-                                                    >
-                                                        <Trash2 size={14} />
-                                                    </button>
-                                                </div>
-                                            ))}
-                                        </div>
-                                    </>
-                                )}
                             </div>
                         )}
                     </div>
-
                 </div>
             </div>
 
@@ -454,7 +433,6 @@ export function SettingsClient({ userEmail }: { userEmail: string }) {
                     )}
                 </div>
             </div>
-
         </div>
     );
 }

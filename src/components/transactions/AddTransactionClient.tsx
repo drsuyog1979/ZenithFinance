@@ -10,34 +10,31 @@ import {
 import Link from "next/link";
 import { TransactionType } from "@prisma/client";
 
-const CATEGORIES = [
-    { name: "Clinic", icon: Briefcase, color: "#10b981" },
-    { name: "Baramati", icon: Briefcase, color: "#14b8a6" },
-    { name: "Mutual Funds", icon: TrendingUp, color: "#0ea5e9" },
-    { name: "Petrol", icon: Car, color: "#3b82f6" },
-    { name: "Salary", icon: Banknote, color: "#ef4444" },
-    { name: "Food & Drink", icon: Utensils, color: "#f97316" },
-    { name: "Electricity Bill", icon: Zap, color: "#eab308" },
-    { name: "App Purchase", icon: Tv, color: "#8b5cf6" },
-    { name: "Apollo", icon: Briefcase, color: "#06b6d4" },
-    { name: "Inamdar", icon: Briefcase, color: "#0891b2" },
-    { name: "MNGL", icon: Zap, color: "#f59e0b" },
-    { name: "VI", icon: Phone, color: "#a855f7" },
-    { name: "Landline", icon: Phone, color: "#d97706" },
-    { name: "Sahyadri Deccan", icon: Briefcase, color: "#2dd4bf" },
-    { name: "Sahyadri Bibwewadi", icon: Briefcase, color: "#34d399" },
-];
+import { CATEGORY_DEFAULTS } from "@/lib/constants";
+import { useEffect } from "react";
 
 export function AddTransactionClient({ wallets }: { wallets: any[] }) {
     const router = useRouter();
     const [amountStr, setAmountStr] = useState("");
     const [type, setType] = useState<TransactionType>(TransactionType.EXPENSE);
-    const [category, setCategory] = useState(CATEGORIES[0].name);
+    const [categories, setCategories] = useState<any[]>(CATEGORY_DEFAULTS);
+    const [category, setCategory] = useState(CATEGORY_DEFAULTS[0].name);
     const [walletId, setWalletId] = useState(wallets[0]?.id || "");
     const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
     const [note, setNote] = useState("");
     const [isRecurring, setIsRecurring] = useState(false);
     const [loading, setLoading] = useState(false);
+
+    useEffect(() => {
+        try {
+            const saved = localStorage.getItem("zenith-categories-v2");
+            if (saved) {
+                const parsed = JSON.parse(saved);
+                setCategories(parsed);
+                setCategory(parsed[0]?.name || CATEGORY_DEFAULTS[0].name);
+            }
+        } catch { }
+    }, []);
 
     const formatINR = (val: string) => {
         if (!val) return "₹0";
@@ -135,8 +132,8 @@ export function AddTransactionClient({ wallets }: { wallets: any[] }) {
                 <div>
                     <h3 className="text-sm font-medium text-gray-500 mb-3 px-1">Category</h3>
                     <div className="grid grid-cols-4 gap-3 sm:gap-4">
-                        {CATEGORIES.map((cat) => {
-                            const Icon = cat.icon;
+                        {categories.map((cat) => {
+                            const Icon = cat.icon || Tag;
                             const isSelected = category === cat.name;
                             return (
                                 <button
