@@ -5,17 +5,29 @@ import { TransactionType } from '@prisma/client';
 import { ParseResult, SpendeeRow } from './import'; // reusing types
 
 function parseDate(dateStr: string): Date | null {
+    const months: Record<string, number> = {
+        jan: 0, feb: 1, mar: 2, apr: 3, may: 4, jun: 5,
+        jul: 6, aug: 7, sep: 8, oct: 9, nov: 10, dec: 11
+    };
+
     const parts = dateStr.split(/[-/]/);
     if (parts.length === 3) {
         let day = parseInt(parts[0], 10);
-        let month = parseInt(parts[1], 10);
+        let month: number;
         let year = parseInt(parts[2], 10);
 
         if (year < 100) year += 2000;
 
-        // Month could be name (e.g. Jan, Feb)? We'll assume DD-MM-YYYY
+        // Check if month is numeric or string
+        const monthPart = parts[1].toLowerCase();
+        if (months[monthPart] !== undefined) {
+            month = months[monthPart];
+        } else {
+            month = parseInt(monthPart, 10) - 1;
+        }
+
         if (!isNaN(day) && !isNaN(month) && !isNaN(year)) {
-            return new Date(Date.UTC(year, month - 1, day, 0, 0, 0));
+            return new Date(Date.UTC(year, month, day, 0, 0, 0));
         }
     }
     return null;
@@ -37,6 +49,10 @@ export async function parseBankStatementPDF(formData: FormData): Promise<ParseRe
         const data = await pdfParse(buffer);
         const text = data.text;
 
+        if (!text || text.trim().length === 0) {
+            return { rows: [], walletNames: [], categories: [], dateRange: null, error: "The PDF appears to be empty or contains only images (no selectable text). Please ensure you upload a text-based PDF statement." };
+        }
+
         const lines = text.split(/\r?\n/).map((l: string) => l.trim()).filter((l: string) => l);
 
         const rows: SpendeeRow[] = [];
@@ -45,99 +61,83 @@ export async function parseBankStatementPDF(formData: FormData): Promise<ParseRe
         const walletName = bank === 'axis' ? 'axissavings' : bank === 'bob' ? 'bob' : 'Other';
 
         // Generic Indian Bank Statement regexes
-        // Matches: Date, description, amount(s), Cr/Dr
+        // Matches: Date (DD-MM-YYYY or DD-Jan-2024), description, amount(s), Cr/Dr
+        // We remove the ^ anchor to allow Serial Numbers or leading spaces
+        const DATE_PATTERN = /(\d{1,2}[-/](?:\d{1,2}|[a-z]{3})[-/]\d{2,4})/;
+
         for (let i = 0; i < lines.length; i++) {
             const line = lines[i];
 
-            // Check if line starts with DD-MM-YYYY or DD/MM/YYYY
-            const dateMatch = line.match(/^(\d{2}[-/]\d{2}[-/]\d{2,4})\s+(.+)$/);
+            const dateMatch = line.match(DATE_PATTERN);
             if (!dateMatch) continue;
 
             const dateStr = dateMatch[1];
-            const rest = dateMatch[2];
+            // Get everything after the date match in this line
+            const rest = line.substring(line.indexOf(dateStr) + dateStr.length).trim();
 
-            // Extract all numbers like "1,000.00" or "1000.00" from the end
+            if (!rest) continue;
+
+            // Extract all numbers like "1,000.00" or "1000.00" or "1000"
             // Also optional Cr/Dr
-            const amountMatches = [...rest.matchAll(/([\d,]+\.\d{2})\s*(Cr|Dr)?/gi)];
+            const amountMatches = [...rest.matchAll(/([\d,]+\.\d{2}|[\d,]+)\s*(Cr|Dr)?/gi)];
 
             if (amountMatches.length >= 1) {
-                // The description is everything before the first amount
-                const firstAmountIndex = amountMatches[0].index;
+                // The description is everything between the date and the first amount
+                const firstAmountMatch = amountMatches[0];
+                const firstAmountIndex = rest.indexOf(firstAmountMatch[0]);
                 let description = rest.substring(0, firstAmountIndex).trim();
 
+                // If description is empty or very short, it might be a multi-line transaction
+                // or the serial number was before the date.
+
                 // Axis bank often starts with two dates: 01-01-2026 01-01-2026 ...
-                if (description.match(/^\d{2}[-/]\d{2}[-/]\d{2,4}\s+/)) {
-                    description = description.replace(/^\d{2}[-/]\d{2}[-/]\d{2,4}\s+/, '');
+                if (description.match(/^(\d{1,2}[-/](?:\d{1,2}|[a-z]{3})[-/]\d{2,4})\s+/)) {
+                    description = description.replace(/^(\d{1,2}[-/](?:\d{1,2}|[a-z]{3})[-/]\d{2,4})\s+/, '');
                 }
 
-                // If we match exactly 2 or 3 amounts, we can guess the transaction amount
-                // axis example: amount Dr/Cr balance
-                // bob example: withdrawal deposit balance
                 let amount = 0;
                 let type: TransactionType = TransactionType.EXPENSE;
+                const descLow = description.toLowerCase();
 
                 if (bank === 'axis') {
-                    // Axis usually has: Amount DR/CR Balance
-                    // So first match is Amount, second is Balance (or vice versa if there's no DR/CR)
                     const amtMatch = amountMatches[0];
                     amount = parseFloat(amtMatch[1].replace(/,/g, ''));
                     const suffix = amtMatch[2]?.toUpperCase();
 
-                    if (suffix === 'CR') {
-                        type = TransactionType.INCOME;
-                    } else if (suffix === 'DR') {
-                        type = TransactionType.EXPENSE;
-                    } else if (description.toLowerCase().includes('deposit') || description.toLowerCase().includes('neft cr')) {
+                    if (suffix === 'CR' || descLow.includes('deposit') || descLow.includes('neft cr') || descLow.includes('upi/cr')) {
                         type = TransactionType.INCOME;
                     } else {
-                        // Guess based on 2 amounts? Usually withdrawals are more common, let's default to Expense
                         type = TransactionType.EXPENSE;
                     }
                 } else if (bank === 'bob') {
-                    // BoB usually has: Cheque Withdrawal Deposit Balance
-                    // If there are 3 numbers: withdrawal, deposit, balance
-                    // If there is an empty column in PDF, pdf-parse might just collapse spaces.
-                    // This makes it tough. Let's look for Cr/Dr. If absent, fallback:
-                    // Usually if there are 2 numbers, the first is the transaction, the second is balance.
-                    // Let's guess income/expense based on keywords or if the first amount is very large vs small.
-                    // Wait, safely: if description has 'UPI/CR' it's income
+                    // BoB often has columns for Withdrawal and Deposit
+                    // If we see two amounts, and the second one is Cr/Dr, or if we guess based on context
                     const parsedVal = parseFloat(amountMatches[0][1].replace(/,/g, ''));
                     amount = parsedVal;
 
-                    if (description.toLowerCase().includes('/cr') || description.toLowerCase().includes('deposit') || description.toLowerCase().includes('neft cr')) {
+                    if (descLow.includes('/cr') || descLow.includes('deposit') || descLow.includes('neft cr') || descLow.includes('upi/cr')) {
                         type = TransactionType.INCOME;
                     } else {
                         type = TransactionType.EXPENSE;
                     }
-
-                    if (amountMatches.length >= 2) {
-                        const amt1 = parseFloat(amountMatches[0][1].replace(/,/g, ''));
-                        const amt2 = parseFloat(amountMatches[1][1].replace(/,/g, ''));
-                        const amt3 = amountMatches.length >= 3 ? parseFloat(amountMatches[2][1].replace(/,/g, '')) : 0;
-
-                        // If we have 3 amounts (e.g. Cheque No, Amount, Balance), Cheque No usually doesn't have decimals.
-                        // Actually let's just stick to keywords + the first matched decimal as amount.
-                    }
                 } else {
                     amount = parseFloat(amountMatches[0][1].replace(/,/g, ''));
-                    if (description.toLowerCase().includes('cr') || description.toLowerCase().includes('deposit')) {
+                    if (descLow.includes('cr') || descLow.includes('deposit')) {
                         type = TransactionType.INCOME;
                     } else {
                         type = TransactionType.EXPENSE;
                     }
                 }
 
-                if (amount > 0) {
+                if (amount > 0 && !isNaN(amount)) {
                     const parsedDate = parseDate(dateStr);
                     if (parsedDate) {
                         let category = "Other";
-                        const descLow = description.toLowerCase();
                         if (descLow.includes("swiggy") || descLow.includes("zomato")) category = "Food & Dining";
                         else if (descLow.includes("amazon") || descLow.includes("flipkart")) category = "Shopping";
                         else if (descLow.includes("netflix") || descLow.includes("spotify")) category = "Subscriptions";
                         else if (descLow.includes("uber") || descLow.includes("ola")) category = "Transport";
                         else if (descLow.includes("salary")) category = "Income";
-                        else category = "Other"; // We let the user re-categorize later if needed
 
                         rows.push({
                             date: parsedDate,
