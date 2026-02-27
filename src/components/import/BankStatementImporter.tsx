@@ -6,6 +6,7 @@ import {
     Loader2, RotateCcw, ArrowLeft, Wallet, Tag, Calendar, Hash, FileCheck
 } from "lucide-react";
 import { parseBankStatementPDF } from "@/app/actions/pdf-import";
+import { parseBankStatementCSV } from "@/app/actions/bank-csv-import";
 import { commitSpendeeImport, rollbackSpendeeImport, checkDuplicates } from "@/app/actions/import";
 import type { ParseResult, ImportResult } from "@/app/actions/import";
 import { ImportSource } from "@prisma/client";
@@ -24,15 +25,20 @@ export function BankStatementImporter() {
     const [isRollingBack, setIsRollingBack] = useState(false);
     const [rollbackDone, setRollbackDone] = useState(false);
     const [potentialDuplicates, setPotentialDuplicates] = useState(0);
+    const [fileFormat, setFileFormat] = useState<"pdf" | "csv">("pdf");
     const fileInputRef = useRef<HTMLInputElement>(null);
 
     async function handleFile(e: React.ChangeEvent<HTMLInputElement>) {
         const file = e.target.files?.[0];
         if (!file) return;
-        if (!file.name.toLowerCase().endsWith(".pdf")) {
-            setError("Please upload a .pdf bank statement.");
+        const isPdf = file.name.toLowerCase().endsWith(".pdf");
+        const isCsv = file.name.toLowerCase().endsWith(".csv");
+
+        if (!isPdf && !isCsv) {
+            setError("Please upload a .pdf or .csv bank statement.");
             return;
         }
+
         setError("");
         setFileName(file.name);
         setIsLoading(true);
@@ -42,7 +48,9 @@ export function BankStatementImporter() {
         formData.append("bank", bank);
 
         try {
-            const result = await parseBankStatementPDF(formData);
+            const result = isPdf
+                ? await parseBankStatementPDF(formData)
+                : await parseBankStatementCSV(formData);
             if (result.error) {
                 setError(result.error);
                 setIsLoading(false);
@@ -110,7 +118,7 @@ export function BankStatementImporter() {
                         </div>
                         <div>
                             <h2 className="text-lg font-bold text-gray-900 dark:text-gray-100">Import Bank Statement</h2>
-                            <p className="text-sm text-gray-500">Auto-parse your PDF transactions</p>
+                            <p className="text-sm text-gray-500">Auto-parse your PDF or CSV transactions</p>
                         </div>
                     </div>
 
@@ -141,7 +149,7 @@ export function BankStatementImporter() {
                     <div className="mt-6 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-2xl text-sm text-blue-700 dark:text-blue-300 flex items-start gap-2">
                         <AlertCircle size={16} className="flex-shrink-0 mt-0.5" />
                         <div>
-                            <strong>Important:</strong> Please ensure your PDF is <strong>unlocked</strong> (not password-protected) before uploading. You can remove passwords using free online tools or your browser&apos;s "Print to PDF" feature.
+                            <strong>Format Support:</strong> We support standard <strong>PDF</strong> and <strong>CSV</strong> exports for Axis and BoB. Ensure files are not password-protected.
                         </div>
                     </div>
                 </div>
@@ -172,14 +180,14 @@ export function BankStatementImporter() {
                     <input
                         ref={fileInputRef}
                         type="file"
-                        accept=".pdf"
+                        accept=".pdf,.csv"
                         className="hidden"
                         onChange={handleFile}
-                        id="pdf-file-input"
+                        id="bank-file-input"
                     />
 
                     <label
-                        htmlFor="pdf-file-input"
+                        htmlFor="bank-file-input"
                         className={`flex flex-col items-center justify-center gap-4 py-16 rounded-2xl border-2 border-dashed transition-all cursor-pointer ${isLoading
                             ? "border-blue-300 bg-blue-50 dark:border-blue-700 dark:bg-blue-900/20"
                             : "border-gray-200 dark:border-gray-700 hover:border-[var(--color-brand-navy)] hover:bg-gray-50 dark:hover:bg-gray-800/50"
@@ -197,7 +205,7 @@ export function BankStatementImporter() {
                                 </div>
                                 <div className="text-center">
                                     <p className="font-semibold text-gray-900 dark:text-gray-100">Tap to select {bank === "axis" ? "Axis Bank" : "Bank of Baroda"} Statement</p>
-                                    <p className="text-sm text-gray-500 mt-1">Unlocked PDF only format</p>
+                                    <p className="text-sm text-gray-500 mt-1">PDF or CSV format supported</p>
                                 </div>
                             </>
                         )}
