@@ -78,76 +78,84 @@ export async function parseBankStatementPDF(formData: FormData): Promise<ParseRe
             if (!rest) continue;
 
             // Extract all numbers like "1,000.00" or "1000.00" or "1000"
-            // Also optional Cr/Dr and optional currency symbol
-            const amountMatches = [...rest.matchAll(/(?:₹\s*)?([\d,]+\.\d{2}|[\d,]+)\s*(Cr|Dr)?/gi)];
+            // We prioritize numbers with decimals as "Money"
+            const moneyMatches = [...rest.matchAll(/(?:₹\s*)?([\d,]+\.\d{2})\s*(Cr|Dr)?/gi)];
 
-            if (amountMatches.length >= 1) {
-                // The description is everything between the date and the first amount
-                const firstAmountMatch = amountMatches[0];
-                const firstAmountIndex = rest.indexOf(firstAmountMatch[0]);
-                let description = rest.substring(0, firstAmountIndex).trim();
+            // If no decimals found, fallback to any numbers
+            const allMatches = moneyMatches.length > 0 ? moneyMatches : [...rest.matchAll(/(?:₹\s*)?([\d,]+)\s*(Cr|Dr)?/gi)];
 
-                // Axis bank often starts with two dates: 01-01-2026 01-01-2026 ...
-                // Use a more relaxed check for redundant dates in the description
-                if (description.match(/^(\d{1,2}[-/ ](?:\d{1,2}|[a-z]{3})[-/ ]\d{2,4})/)) {
-                    description = description.replace(/^(\d{1,2}[-/ ](?:\d{1,2}|[a-z]{3})[-/ ]\d{2,4})\s*/, '');
-                }
-
+            if (allMatches.length >= 1) {
                 let amount = 0;
                 let type: TransactionType = TransactionType.EXPENSE;
-                const descLow = description.toLowerCase();
+                let transactionMatch = null;
 
-                if (bank === 'axis') {
-                    const amtMatch = amountMatches[0];
-                    amount = parseFloat(amtMatch[1].replace(/,/g, ''));
-                    const suffix = amtMatch[2]?.toUpperCase();
-
-                    if (suffix === 'CR' || descLow.includes('deposit') || descLow.includes('neft cr') || descLow.includes('upi/cr') || descLow.includes('credit')) {
-                        type = TransactionType.INCOME;
-                    } else {
-                        type = TransactionType.EXPENSE;
-                    }
-                } else if (bank === 'bob') {
-                    const parsedVal = parseFloat(amountMatches[0][1].replace(/,/g, ''));
-                    amount = parsedVal;
-
-                    if (descLow.includes('/cr') || descLow.includes('deposit') || descLow.includes('neft cr') || descLow.includes('upi/cr') || descLow.includes('credit')) {
-                        type = TransactionType.INCOME;
-                    } else {
-                        type = TransactionType.EXPENSE;
-                    }
+                // HEURISTIC: Find the actual transaction amount
+                // 1. If any number has an explicit Cr/Dr tag, that's it.
+                const tagged = allMatches.find(m => m[2]);
+                if (tagged) {
+                    transactionMatch = tagged;
+                } else if (allMatches.length >= 2) {
+                    // 2. In most bank statements (Axis, BOB), the format is [Entry] [Balance]
+                    // So the transaction is the one before the last one.
+                    transactionMatch = allMatches[allMatches.length - 2];
                 } else {
-                    amount = parseFloat(amountMatches[0][1].replace(/,/g, ''));
-                    if (descLow.includes('cr') || descLow.includes('deposit') || descLow.includes('credit')) {
-                        type = TransactionType.INCOME;
-                    } else {
-                        type = TransactionType.EXPENSE;
-                    }
+                    // 3. Only one number found
+                    transactionMatch = allMatches[0];
                 }
 
-                if (amount > 0 && !isNaN(amount)) {
-                    const parsedDate = parseDate(dateStr);
-                    if (parsedDate) {
-                        let category = "Other";
-                        if (descLow.includes("swiggy") || descLow.includes("zomato")) category = "Food & Drink";
-                        else if (descLow.includes("amazon") || descLow.includes("flipkart")) category = "Shopping";
-                        else if (descLow.includes("netflix") || descLow.includes("spotify")) category = "Subscriptions";
-                        else if (descLow.includes("uber") || descLow.includes("ola")) category = "Transport";
-                        else if (descLow.includes("salary")) category = "Salary";
-                        else if (descLow.includes("mutual fund") || descLow.includes("investment")) category = "Mutual Funds";
+                if (transactionMatch) {
+                    amount = parseFloat(transactionMatch[1].replace(/,/g, ''));
+                    const suffix = transactionMatch[2]?.toUpperCase();
 
-                        rows.push({
-                            date: parsedDate,
-                            category,
-                            amount: Math.round(amount * 100),
-                            currency: "INR",
-                            note: description.substring(0, 100),
-                            walletName: walletName,
-                            type
-                        });
+                    // The description is everything between date and the first amount
+                    const firstMatchIndex = rest.indexOf(allMatches[0][0]);
+                    let description = rest.substring(0, firstMatchIndex).trim();
 
-                        if (!earliest || parsedDate < earliest) earliest = parsedDate;
-                        if (!latest || parsedDate > latest) latest = parsedDate;
+                    if (description.match(/^(\d{1,2}[-/ ](?:\d{1,2}|[a-z]{3})[-/ ]\d{2,4})/)) {
+                        description = description.replace(/^(\d{1,2}[-/ ](?:\d{1,2}|[a-z]{3})[-/ ]\d{2,4})\s*/, '');
+                    }
+
+                    const descLow = (description + " " + (transactionMatch[0] || "")).toLowerCase();
+                    const lineLow = line.toLowerCase();
+
+                    // Determine Income/Expense
+                    if (suffix === 'CR' ||
+                        lineLow.includes('deposit') ||
+                        lineLow.includes('neft cr') ||
+                        lineLow.includes('upi/cr') ||
+                        lineLow.includes('/cr') ||
+                        lineLow.includes('credit') ||
+                        lineLow.includes('int.pd') ||
+                        lineLow.includes('salary')) {
+                        type = TransactionType.INCOME;
+                    } else {
+                        type = TransactionType.EXPENSE;
+                    }
+
+                    if (amount > 0 && !isNaN(amount)) {
+                        const parsedDate = parseDate(dateStr);
+                        if (parsedDate) {
+                            let category = "Other";
+                            if (lineLow.includes("swiggy") || lineLow.includes("zomato")) category = "Food & Drink";
+                            else if (lineLow.includes("amazon") || lineLow.includes("flipkart")) category = "Shopping";
+                            else if (lineLow.includes("netflix") || lineLow.includes("spotify")) category = "Subscriptions";
+                            else if (lineLow.includes("uber") || lineLow.includes("ola")) category = "Transport";
+                            else if (lineLow.includes("salary")) category = "Salary";
+                            else if (lineLow.includes("mutual fund") || lineLow.includes("investment")) category = "Mutual Funds";
+
+                            rows.push({
+                                date: parsedDate,
+                                category,
+                                amount: Math.round(amount * 100),
+                                currency: "INR",
+                                note: description.substring(0, 100) || "Bank Transaction",
+                                walletName: walletName,
+                                type
+                            });
+
+                            if (!earliest || parsedDate < earliest) earliest = parsedDate;
+                            if (!latest || parsedDate > latest) latest = parsedDate;
+                        }
                     }
                 }
             }
