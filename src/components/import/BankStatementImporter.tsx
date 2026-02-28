@@ -61,7 +61,14 @@ export function BankStatementImporter() {
                 setIsLoading(false);
                 return;
             }
-            setParseResult(result);
+            // Normalize dates (Serialized to strings from server action)
+            const normalizedRows = result.rows.map(r => ({
+                ...r,
+                date: new Date(r.date)
+            }));
+            const normalizedResult = { ...result, rows: normalizedRows };
+
+            setParseResult(normalizedResult);
 
             // Check for potential duplicates (soft match)
             const matches = await checkDuplicates(result.rows);

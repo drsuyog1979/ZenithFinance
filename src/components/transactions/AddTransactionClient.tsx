@@ -13,6 +13,10 @@ import { TransactionType } from "@prisma/client";
 import { CATEGORY_DEFAULTS } from "@/lib/constants";
 import { useEffect } from "react";
 
+const ICON_MAP: Record<string, any> = {
+    Utensils, Car, Zap, Tv, Briefcase, TrendingUp, Phone, Banknote, Tag
+};
+
 export function AddTransactionClient({ wallets }: { wallets: any[] }) {
     const router = useRouter();
     const [amountStr, setAmountStr] = useState("");
@@ -145,7 +149,10 @@ export function AddTransactionClient({ wallets }: { wallets: any[] }) {
                                         }`}
                                     style={isSelected ? { backgroundColor: cat.color, color: 'white' } : {}}
                                 >
-                                    <Icon size={24} strokeWidth={isSelected ? 2.5 : 2} color={isSelected ? 'white' : cat.color} />
+                                    {(() => {
+                                        const Icon = typeof cat.icon === 'string' ? ICON_MAP[cat.icon] || Tag : cat.icon || Tag;
+                                        return <Icon size={24} strokeWidth={isSelected ? 2.5 : 2} color={isSelected ? 'white' : cat.color} />;
+                                    })()}
                                     <span className="text-[10px] font-medium text-center leading-tight">
                                         {cat.name}
                                     </span>

@@ -40,7 +40,14 @@ export function SpendeeImporter() {
                 setIsLoading(false);
                 return;
             }
-            setParseResult(result);
+            // Normalize dates (Serialized to strings from server action)
+            const normalizedRows = result.rows.map(r => ({
+                ...r,
+                date: new Date(r.date)
+            }));
+            const normalizedResult = { ...result, rows: normalizedRows };
+
+            setParseResult(normalizedResult);
             setStep("preview");
         } catch (e: any) {
             setError(e.message);

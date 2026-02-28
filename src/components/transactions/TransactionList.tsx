@@ -4,8 +4,13 @@ import { useState, useEffect } from "react";
 import { format } from "date-fns";
 import {
     ShoppingBag, Utensils, Car, HeartPulse, Home, Zap, Tv, Briefcase,
-    Search, Trash2, Edit2, Loader2, X, Check, Tag, TrendingUp, Phone, Banknote
+    Search, Trash2, Edit2, Loader2, X, Check, Tag, TrendingUp, Phone, Banknote, Fuel, ShoppingBag, Heart, Coffee, Gamepad2, Plane, Gift, GraduationCap, Dumbbell, Beer, Music, Camera, Globe
 } from "lucide-react";
+
+const ICON_MAP: Record<string, any> = {
+    ShoppingBag, Utensils, Car, HeartPulse, Home, Zap, Tv, Briefcase,
+    TrendingUp, Phone, Banknote, Tag, Fuel, Heart, Coffee, Gamepad2, Plane, Gift, GraduationCap, Dumbbell, Beer, Music, Camera, Globe
+};
 
 // Deterministic color for unknown categories
 function hashColor(str: string): string {
@@ -60,10 +65,11 @@ export function TransactionList({
             maximumFractionDigits: 0,
         }).format(value / 100);
     };
-
     const getIcon = (category: string) => {
         const found = allCategories.find(c => c.name === category);
-        if (found?.icon) return found.icon;
+        if (found?.icon) {
+            return typeof found.icon === 'string' ? ICON_MAP[found.icon] || Tag : found.icon;
+        }
 
         switch (category) {
             case "Food & Dining": case "Food & Drink": case "Food & Drinks": return Utensils;
