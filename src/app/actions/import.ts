@@ -213,8 +213,14 @@ export async function checkDuplicates(rows: SpendeeRow[]): Promise<number> {
         if (rows.length === 0) return 0;
 
         // Get the date range from rows
-        const earliest = new Date(Math.min(...rows.map(r => r.date.getTime())));
-        const latest = new Date(Math.max(...rows.map(r => r.date.getTime())));
+        // Dates are passed as strings from the client in server actions
+        const normalizedRows = rows.map(r => ({
+            ...r,
+            date: new Date(r.date)
+        }));
+
+        const earliest = new Date(Math.min(...normalizedRows.map(r => r.date.getTime())));
+        const latest = new Date(Math.max(...normalizedRows.map(r => r.date.getTime())));
 
         // Fetch user's existing transactions in that range
         const existingTxs = await prisma.transaction.findMany({
@@ -231,7 +237,7 @@ export async function checkDuplicates(rows: SpendeeRow[]): Promise<number> {
         ));
 
         let matches = 0;
-        for (const row of rows) {
+        for (const row of normalizedRows) {
             const key = `${row.date.toISOString().split('T')[0]}_${row.amount}`;
             if (existingSet.has(key)) matches++;
         }
@@ -254,6 +260,12 @@ export interface ImportResult {
 export async function commitSpendeeImport(rows: SpendeeRow[], source: ImportSource = ImportSource.SPENDEE): Promise<ImportResult> {
     try {
         const userId = await getUserAndEnsureExists();
+
+        // Normalize rows (Dates are passed as strings from client)
+        const normalizedRows = rows.map(r => ({
+            ...r,
+            date: new Date(r.date)
+        }));
 
         // 1. Find or create wallets
         const walletMap = new Map<string, string>(); // walletName → walletId
@@ -280,7 +292,7 @@ export async function commitSpendeeImport(rows: SpendeeRow[], source: ImportSour
         // Use a session ID to allow rollback
         const importSessionId = `${source.toLowerCase()}_${Date.now()}`;
 
-        for (const row of rows) {
+        for (const row of normalizedRows) {
             const walletId = walletMap.get(row.walletName.toLowerCase())!;
 
             // SECURITY/CRASH PREVENT: Skip rows with amounts that exceed the 32-bit integer limit

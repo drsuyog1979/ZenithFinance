@@ -34,9 +34,9 @@ export async function parseBankStatementCSV(formData: FormData): Promise<ParseRe
 
         // Find header row (some bank CSVs have junk lines at the top)
         let headerIdx = -1;
-        const headerKeywords = ['date', 'txn date', 'tran date', 'value date', 'particulars', 'narration', 'description', 'amount', 'withdrawal', 'deposit'];
+        const headerKeywords = ['date', 'txn date', 'tran date', 'value date', 'particulars', 'narration', 'description', 'amount', 'withdrawal', 'deposit', 'dr', 'cr'];
 
-        for (let i = 0; i < Math.min(lines.length, 30); i++) {
+        for (let i = 0; i < Math.min(lines.length, 50); i++) {
             const l = lines[i].toLowerCase();
             const matches = headerKeywords.filter(k => l.includes(k));
             // If line contains at least 3 distinct keywords, it's likely our header
@@ -49,13 +49,13 @@ export async function parseBankStatementCSV(formData: FormData): Promise<ParseRe
         if (headerIdx === -1) headerIdx = 0; // Fallback to first line if no clear header found
 
         const headers = parseCSVLine(lines[headerIdx], separator).map(h => h.toLowerCase().trim());
-        const getIdx = (keys: string[]) => headers.findIndex(h => keys.some(k => h.includes(k)));
+        const getIdx = (keys: string[]) => headers.findIndex(h => keys.some(k => h === k || h.includes(k)));
 
         const dateIdx = getIdx(['date', 'txn date', 'tran date']);
         const descIdx = getIdx(['description', 'narration', 'particulars']);
         const amtIdx = getIdx(['amount', 'transaction amount']);
-        const drIdx = getIdx(['withdrawal', 'debit']);
-        const crIdx = getIdx(['deposit', 'credit']);
+        const drIdx = getIdx(['withdrawal', 'debit', 'dr']);
+        const crIdx = getIdx(['deposit', 'credit', 'cr']);
         const typeIdx = getIdx(['type', 'cr/dr', 'cr_dr']);
 
         if (dateIdx < 0 || (amtIdx < 0 && (drIdx < 0 || crIdx < 0))) {

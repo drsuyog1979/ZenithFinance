@@ -139,7 +139,7 @@ export function RecentTransactions({ transactions }: { transactions: ExtTransact
     // Group by date
     const grouped: Record<string, ExtTransaction[]> = {};
     transactions.forEach(t => {
-        const dateKey = format(t.date, "yyyy-MM-dd");
+        const dateKey = format(new Date(t.date), "yyyy-MM-dd");
         if (!grouped[dateKey]) grouped[dateKey] = [];
         grouped[dateKey].push(t);
     });
