@@ -77,12 +77,18 @@ export async function parseBankStatementPDF(formData: FormData): Promise<ParseRe
 
             if (!rest) continue;
 
-            // Extract all numbers like "1,000.00" or "1000.00" or "1000"
-            // We prioritize numbers with decimals as "Money"
-            const moneyMatches = [...rest.matchAll(/(?:₹\s*)?([\d,]+\.\d{2})\s*(Cr|Dr)?/gi)];
+            // Extract all matches: with decimals (e.g. 1,000.00) or without (e.g. 1000)
+            const potentialMatches = [...rest.matchAll(/(?:₹\s*)?([\d,]+\.\d{2}|[\d,]+)\s*(Cr|Dr)?/gi)];
 
-            // If no decimals found, fallback to any numbers
-            const allMatches = moneyMatches.length > 0 ? moneyMatches : [...rest.matchAll(/(?:₹\s*)?([\d,]+)\s*(Cr|Dr)?/gi)];
+            // FILTER: Ignore obviously non-monetary strings (Reference numbers/IDs)
+            // Rule: If it has no decimal and is longer than 10 digits, it's a Ref ID.
+            const allMatches = potentialMatches.filter(m => {
+                const val = m[1].replace(/,/g, '');
+                if (!m[1].includes('.') && val.length >= 10) return false;
+                // Also ignore too-small numbers that might be serial numbers?
+                // For now, let's just stick to the too-large rule.
+                return true;
+            });
 
             if (allMatches.length >= 1) {
                 let amount = 0;
@@ -90,16 +96,18 @@ export async function parseBankStatementPDF(formData: FormData): Promise<ParseRe
                 let transactionMatch = null;
 
                 // HEURISTIC: Find the actual transaction amount
-                // 1. If any number has an explicit Cr/Dr tag, that's it.
+                // In Bank statements (Axis/BOB), columns are often: Date | Description/Ref | Dr | Cr | Balance
+                // or Date | Ref | Description | Dr | Cr | Balance
+                // If there are many numbers, the last one is almost always the Balance.
+                // The transaction amount is one of the ones before it.
+
                 const tagged = allMatches.find(m => m[2]);
                 if (tagged) {
                     transactionMatch = tagged;
                 } else if (allMatches.length >= 2) {
-                    // 2. In most bank statements (Axis, BOB), the format is [Entry] [Balance]
-                    // So the transaction is the one before the last one.
+                    // Usually: [Something] [Amount] [Balance]
                     transactionMatch = allMatches[allMatches.length - 2];
                 } else {
-                    // 3. Only one number found
                     transactionMatch = allMatches[0];
                 }
 

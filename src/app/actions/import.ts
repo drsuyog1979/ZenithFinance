@@ -282,6 +282,16 @@ export async function commitSpendeeImport(rows: SpendeeRow[], source: ImportSour
 
         for (const row of rows) {
             const walletId = walletMap.get(row.walletName.toLowerCase())!;
+
+            // SECURITY/CRASH PREVENT: Skip rows with amounts that exceed the 32-bit integer limit
+            // (e.g. if a long reference ID was incorrectly parsed as an amount)
+            const MAX_INT32 = 2147483647;
+            if (row.amount > MAX_INT32 || row.amount < -MAX_INT32) {
+                console.warn(`Skipping row with invalid amount (overflow): ${row.amount}`);
+                skipped++;
+                continue;
+            }
+
             try {
                 // Soft-match deduplication: skip if ANY transaction exists on this date with this amount
                 // User confirmed they never have two different entries of the same amount on the same day.
