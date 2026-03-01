@@ -74,7 +74,7 @@ export function CapitalGainsImporter({ onComplete }: { onComplete: () => void })
                 </div>
                 <div>
                     <h2 className="text-lg font-bold text-gray-900 dark:text-gray-100">Import Statements</h2>
-                    <p className="text-xs text-gray-500">Mutual Funds & Stocks</p>
+                    <p className="text-xs text-gray-500">Mutual Funds & Stocks (PDF/CSV/Excel)</p>
                 </div>
             </div>
 
@@ -89,8 +89,8 @@ export function CapitalGainsImporter({ onComplete }: { onComplete: () => void })
                     >
                         <option value="cams">CAMS / INDmoney (PDF/CSV/Excel)</option>
                         <option value="zerodha">Zerodha (PDF/CSV/Excel)</option>
-                        <option value="groww">Groww (CSV)</option>
-                        <option value="upstox">Upstox (CSV)</option>
+                        <option value="groww">Groww (CSV/Excel)</option>
+                        <option value="upstox">Upstox (CSV/Excel)</option>
                     </select>
                 </div>
 

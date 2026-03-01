@@ -150,12 +150,12 @@ export function BankStatementImporter() {
                         </div>
                         <div>
                             <h2 className="text-lg font-bold text-gray-900 dark:text-gray-100">Import Bank Statement</h2>
-                            <p className="text-sm text-gray-500">Auto-parse your PDF or CSV transactions</p>
+                            <p className="text-sm text-gray-500">Auto-parse your PDF, CSV or Excel transactions</p>
                         </div>
                     </div>
 
                     <div className="space-y-4">
-                        <p className="text-sm text-gray-600 dark:text-gray-400">Select your bank to ensure the PDF is parsed correctly into the corresponding wallet.</p>
+                        <p className="text-sm text-gray-600 dark:text-gray-400">Select your bank to ensure the statement is parsed correctly into the corresponding wallet.</p>
 
                         <div className="grid grid-cols-2 gap-4">
                             <button
