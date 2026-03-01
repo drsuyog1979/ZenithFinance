@@ -39,9 +39,15 @@ export async function parseAssetStatement(formData: FormData): Promise<{
             const text = await file.text();
             transactions = parseAssetCSV(text, source);
         } else if ([".xls", ".xlsx", ".xlsm", ".xlsb", ".xlv"].some(ext => fileName.endsWith(ext))) {
-            const arrayBuffer = await file.arrayBuffer();
-            const workbook = XLSX.read(arrayBuffer, { type: 'buffer' });
-            const worksheet = workbook.Sheets[workbook.SheetNames[0]];
+            const buffer = Buffer.from(await file.arrayBuffer());
+            const workbook = XLSX.read(buffer, { type: 'buffer' });
+
+            // Look for the best sheet: TRXN_DETAILS or the first one
+            let sheetName = workbook.SheetNames[0];
+            const bestSheet = workbook.SheetNames.find(n => n.toLowerCase().includes('trxn') || n.toLowerCase().includes('transaction') || n.toLowerCase().includes('details'));
+            if (bestSheet) sheetName = bestSheet;
+
+            const worksheet = workbook.Sheets[sheetName];
             const csv = XLSX.utils.sheet_to_csv(worksheet);
             transactions = parseAssetCSV(csv, source);
         } else {
@@ -49,7 +55,8 @@ export async function parseAssetStatement(formData: FormData): Promise<{
         }
 
         if (transactions.length === 0) {
-            return { transactions: [], error: "No transactions identified in the file. Check if format is supported." };
+            // If total failure, let's provide more info in the error
+            return { transactions: [], error: "No transactions identified. Ensure you've uploaded a valid Capital Gains statement from CAMS/Zerodha/Groww." };
         }
 
         return {
@@ -123,55 +130,116 @@ function parseAssetCSV(text: string, source: string): AssetTransaction[] {
     if (lines.length < 2) return [];
 
     let headerLineIdx = 0;
-    let headers = lines[0].toLowerCase().split(',');
+    let headers: string[] = [];
 
-    // CAMS Excel doesn't always put headers on line 0
-    if (!headers.some(h => h.includes('symbol') || h.includes('scheme') || h.includes('fund'))) {
-        for (let i = 0; i < Math.min(lines.length, 20); i++) {
-            const hCandidate = lines[i].toLowerCase().split(',');
-            if (hCandidate.some(h => h.includes('scheme name') || h.includes('symbol') || h.includes('instrument'))) {
-                headerLineIdx = i;
-                headers = hCandidate;
-                break;
-            }
+    // Search for header row in the first 50 lines
+    for (let i = 0; i < Math.min(lines.length, 50); i++) {
+        const hCandidate = lines[i].toLowerCase().split(',');
+        if (hCandidate.some(h => h.includes('scheme name') || h.includes('instrument') || (h.includes('desc') && hCandidate.some(h2 => h2.includes('units'))))) {
+            headerLineIdx = i;
+            headers = hCandidate;
+            break;
         }
     }
+
+    if (headers.length === 0) return [];
 
     const result: AssetTransaction[] = [];
     const find = (keywords: string[]) => headers.findIndex(h => keywords.some(k => h.includes(k)));
 
     const symIdx = find(['scheme name', 'symbol', 'instrument', 'scheme', 'stock']);
-    const dateIdx = find(['date', 'time']);
+    const dateIdx = find(['date', 'time']); // Primary date (usually Sell Date in CG statements)
+    const buyDateIdx = find(['date_1', 'purchase date']); // Secondary date for CG pairings
     const typeIdx = find(['desc', 'type', 'side', 'transaction']);
-    const qtyIdx = find(['units', 'qty', 'quantity']);
-    const priceIdx = find(['price', 'nav', 'rate']);
 
-    if (symIdx < 0 || dateIdx < 0 || qtyIdx < 0 || priceIdx < 0) return [];
+    // For CG statements, we want the units of the specific lot/leg (RedUnits or PurhUnit)
+    const qtyIdx = find(['redunits', 'purhunit', 'units', 'qty', 'quantity']);
+
+    const priceIdx = find(['price', 'nav', 'rate']); // Sale price
+    const buyPriceIdx = find(['unit cost', 'purchase price', 'buy price']); // Cost price for pairings
+
+    if (symIdx < 0 || qtyIdx < 0 || (dateIdx < 0 && buyDateIdx < 0)) return [];
 
     for (let i = headerLineIdx + 1; i < lines.length; i++) {
-        const cols = parseCSVLine(lines[i], ',');
-        if (cols.length <= Math.max(symIdx, dateIdx, qtyIdx, priceIdx)) continue;
+        try {
+            const cols = parseCSVLine(lines[i], ',');
+            if (cols.length <= Math.max(symIdx, qtyIdx)) continue;
 
-        const rawType = typeIdx >= 0 ? cols[typeIdx].toUpperCase() : "BUY";
-        const priceStr = cols[priceIdx].replace(/,/g, '');
-        const qtyStr = cols[qtyIdx].replace(/,/g, '');
+            const symbol = cols[symIdx];
+            if (!symbol || symbol.toLowerCase().includes('total')) continue;
 
-        const price = parseFloat(priceStr);
-        const units = Math.abs(parseFloat(qtyStr));
+            const qtyStr = cols[qtyIdx].replace(/,/g, '');
+            const units = Math.abs(parseFloat(qtyStr));
+            if (isNaN(units) || units === 0) continue;
 
-        if (isNaN(price) || isNaN(units)) continue;
+            const assetType = (symbol.toLowerCase().includes("fund") || (headers[2] && lines[i].includes("EQUITY"))) ? AssetType.EQUITY_MF : AssetType.STOCK;
 
-        result.push({
-            symbol: cols[symIdx],
-            type: (rawType.includes("SELL") || rawType.includes("RED") || rawType.includes("OUT")) ? "SELL" : "BUY",
-            assetType: (cols[symIdx].toLowerCase().includes("fund") || (headers[2] && lines[i].includes("EQUITY"))) ? AssetType.EQUITY_MF : AssetType.STOCK,
-            date: new Date(cols[dateIdx]),
-            pricePaise: Math.round(price * 100),
-            units: units
-        });
+            // 1. Handle the Primary Date (Sale in CG statements)
+            if (dateIdx >= 0 && cols[dateIdx]) {
+                const priceStr = cols[priceIdx]?.replace(/,/g, '') || "0";
+                const price = parseFloat(priceStr);
+                const rawType = typeIdx >= 0 ? cols[typeIdx].toUpperCase() : "BUY";
+                const type = (rawType.includes("SELL") || rawType.includes("RED") || rawType.includes("OUT")) ? "SELL" : "BUY";
+
+                const date = parseDate(cols[dateIdx]);
+                if (date) {
+                    result.push({
+                        symbol,
+                        type,
+                        assetType,
+                        date,
+                        pricePaise: Math.round((isNaN(price) ? 0 : price) * 100),
+                        units
+                    });
+                }
+            }
+
+            // 2. Handle the Secondary Date (Buy in CG statements)
+            if (buyDateIdx >= 0 && cols[buyDateIdx]) {
+                const buyPriceStr = cols[buyPriceIdx]?.replace(/,/g, '') || "0";
+                const buyPrice = parseFloat(buyPriceStr);
+                const buyDate = parseDate(cols[buyDateIdx]);
+
+                if (buyDate) {
+                    result.push({
+                        symbol,
+                        type: "BUY",
+                        assetType,
+                        date: buyDate,
+                        pricePaise: Math.round((isNaN(buyPrice) ? 0 : buyPrice) * 100),
+                        units
+                    });
+                }
+            }
+        } catch (e) {
+            console.error("Row parse error:", e);
+        }
     }
 
     return result;
+}
+
+function parseDate(str: string): Date | null {
+    if (!str) return null;
+    const d = new Date(str);
+    if (!isNaN(d.getTime())) return d;
+
+    // Fallback for dd-MMM-yyyy or dd/mm/yyyy
+    const parts = str.split(/[-/]/);
+    if (parts.length === 3) {
+        // dd-MMM-yyyy
+        if (isNaN(parseInt(parts[1]))) {
+            const months: any = { jan: 0, feb: 1, mar: 2, apr: 3, may: 4, jun: 5, jul: 6, aug: 7, sep: 8, oct: 9, nov: 10, dec: 11 };
+            const m = months[parts[1].toLowerCase().slice(0, 3)];
+            if (m !== undefined) return new Date(parseInt(parts[2]), m, parseInt(parts[0]));
+        }
+        // dd/mm/yyyy
+        const day = parseInt(parts[0]);
+        const month = parseInt(parts[1]);
+        const year = parts[2].length === 2 ? 2000 + parseInt(parts[2]) : parseInt(parts[2]);
+        return new Date(year, month - 1, day);
+    }
+    return null;
 }
 
 function parseCSVLine(line: string, separator: string): string[] {
