@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, Wallet, Target, PieChart, Settings, LayoutList, Upload } from "lucide-react";
+import { LayoutDashboard, Wallet, Target, PieChart, Settings, LayoutList, Upload, Coins } from "lucide-react";
 
 export function Sidebar() {
   const pathname = usePathname();
@@ -12,6 +12,7 @@ export function Sidebar() {
     { name: "Wallets", href: "/wallets", icon: Wallet },
     { name: "Transactions", href: "/transactions", icon: LayoutList },
     { name: "Analytics", href: "/analytics", icon: PieChart },
+    { name: "Capital Gains", href: "/capital-gains", icon: Coins },
     { name: "Import Data", href: "/import", icon: Upload },
   ];
 

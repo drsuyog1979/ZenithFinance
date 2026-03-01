@@ -180,25 +180,25 @@ export function TaxAssistant() {
                     {/* Main Tax Overview Card */}
                     <div className="md:col-span-2 space-y-6">
                         <div className="bg-white dark:bg-gray-900 rounded-3xl p-6 shadow-sm border border-gray-100 dark:border-gray-800 relative overflow-hidden group">
-                            <div className="absolute top-0 right-0 p-8 opacity-5 group-hover:opacity-10 transition-opacity">
+                            <div className="absolute top-0 right-0 p-8 opacity-5 group-hover:opacity-10 transition-opacity pointer-events-none text-gray-400 dark:text-gray-600">
                                 <Calculator size={160} />
                             </div>
 
-                            <div className="flex justify-between items-start mb-8">
+                            <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-4 mb-8">
                                 <div>
                                     <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-1">FY 2025–26 Projection</h2>
                                     <p className="text-sm text-gray-500 font-medium">Estimated liability based on current income</p>
                                 </div>
-                                <div className="flex gap-2">
+                                <div className="flex gap-2 shrink-0">
                                     <button
                                         onClick={() => setShowSetup(true)}
-                                        className="px-4 py-2 bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 rounded-xl text-xs font-bold hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+                                        className="px-4 py-2 bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 rounded-xl text-xs font-bold hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors whitespace-nowrap"
                                     >
                                         Edit Profile
                                     </button>
                                     <button
                                         onClick={handleReset}
-                                        className="px-4 py-2 bg-red-50 dark:bg-red-950/20 text-red-600 dark:text-red-400 rounded-xl text-xs font-bold hover:bg-red-100 dark:hover:bg-red-900/30 transition-colors"
+                                        className="px-4 py-2 bg-red-50 dark:bg-red-950/20 text-red-600 dark:text-red-400 rounded-xl text-xs font-bold hover:bg-red-100 dark:hover:bg-red-900/30 transition-colors whitespace-nowrap"
                                     >
                                         Reset Analysis
                                     </button>
