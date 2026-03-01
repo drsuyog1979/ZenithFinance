@@ -77,7 +77,7 @@ export function CapitalGainsImporter({ onComplete }: { onComplete: () => void })
                         disabled={isLoading}
                         className="hidden"
                         id="asset-upload"
-                        accept=".pdf,.csv"
+                        accept=".pdf,.csv,.xls,.xlsx,.xlsb,.xlsm"
                     />
                     <label
                         htmlFor="asset-upload"
@@ -90,7 +90,7 @@ export function CapitalGainsImporter({ onComplete }: { onComplete: () => void })
                                 <FileText className="text-gray-400 group-hover:text-indigo-500 transition-colors" size={32} />
                                 <div className="text-center">
                                     <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">Click to upload statement</p>
-                                    <p className="text-xs text-gray-400 mt-1">PDF or CSV supported</p>
+                                    <p className="text-xs text-gray-400 mt-1">PDF, CSV or Excel supported</p>
                                 </div>
                             </>
                         )}

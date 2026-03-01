@@ -3,6 +3,7 @@
 import pdfParse from 'pdf-parse/lib/pdf-parse.js';
 import { AssetType } from '@prisma/client';
 import { AssetTransaction } from './assets';
+import * as XLSX from 'xlsx';
 
 /**
  * General parser for various asset statements.
@@ -21,7 +22,8 @@ export async function parseAssetStatement(formData: FormData): Promise<{
     try {
         let transactions: AssetTransaction[] = [];
 
-        if (file.name.toLowerCase().endsWith('.pdf')) {
+        const fileName = file.name.toLowerCase();
+        if (fileName.endsWith('.pdf')) {
             const arrayBuffer = await file.arrayBuffer();
             const data = await pdfParse(Buffer.from(arrayBuffer));
             const text = data.text;
@@ -33,10 +35,17 @@ export async function parseAssetStatement(formData: FormData): Promise<{
             } else {
                 return { transactions: [], error: "PDF parsing currently only supported for CAMS/Zerodha." };
             }
-        } else {
-            // CSV Parsing (placeholder for common formats)
+        } else if (fileName.endsWith('.csv')) {
             const text = await file.text();
             transactions = parseAssetCSV(text, source);
+        } else if ([".xls", ".xlsx", ".xlsm", ".xlsb"].some(ext => fileName.endsWith(ext))) {
+            const arrayBuffer = await file.arrayBuffer();
+            const workbook = XLSX.read(arrayBuffer, { type: 'buffer' });
+            const worksheet = workbook.Sheets[workbook.SheetNames[0]];
+            const csv = XLSX.utils.sheet_to_csv(worksheet);
+            transactions = parseAssetCSV(csv, source);
+        } else {
+            return { transactions: [], error: "Unsupported file format. Please use PDF, CSV, or Excel." };
         }
 
         if (transactions.length === 0) {
@@ -128,21 +137,39 @@ function parseAssetCSV(text: string, source: string): AssetTransaction[] {
     if (symIdx < 0 || dateIdx < 0 || qtyIdx < 0 || priceIdx < 0) return [];
 
     for (let i = 1; i < lines.length; i++) {
-        const cols = lines[i].split(',').map(c => c.replace(/"/g, '').trim());
+        const cols = parseCSVLine(lines[i], ',');
         const rawType = typeIdx >= 0 ? cols[typeIdx].toUpperCase() : "BUY";
+        const price = parseFloat(cols[priceIdx].replace(/,/g, ''));
+        const units = Math.abs(parseFloat(cols[qtyIdx].replace(/,/g, '')));
 
         result.push({
             symbol: cols[symIdx],
             type: (rawType.includes("SELL") || rawType.includes("RED") || rawType.includes("OUT")) ? "SELL" : "BUY",
             assetType: cols[symIdx].toLowerCase().includes("fund") ? AssetType.EQUITY_MF : AssetType.STOCK,
             date: new Date(cols[dateIdx]),
-            pricePaise: Math.round(parseFloat(cols[qtyIdx]) * 100), // Incorrect logic? Wait
-            units: Math.abs(parseFloat(cols[qtyIdx]))
+            pricePaise: Math.round(price * 100),
+            units: units
         });
-        // Fix price calculation above - wait, pricePaise should be price * 100
-        const price = parseFloat(cols[priceIdx]);
-        result[result.length - 1].pricePaise = Math.round(price * 100);
     }
 
+    return result;
+}
+
+function parseCSVLine(line: string, separator: string): string[] {
+    const result: string[] = [];
+    let current = "";
+    let inQuotes = false;
+    for (let i = 0; i < line.length; i++) {
+        const ch = line[i];
+        if (ch === '"') {
+            inQuotes = !inQuotes;
+        } else if (ch === separator && !inQuotes) {
+            result.push(current.replace(/^"|"$/g, "").trim());
+            current = "";
+        } else {
+            current += ch;
+        }
+    }
+    result.push(current.replace(/^"|"$/g, "").trim());
     return result;
 }

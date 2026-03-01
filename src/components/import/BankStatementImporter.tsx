@@ -6,7 +6,7 @@ import {
     Loader2, RotateCcw, ArrowLeft, Wallet, Tag, Calendar, Hash, FileCheck
 } from "lucide-react";
 import { parseBankStatementPDF } from "@/app/actions/pdf-import";
-import { parseBankStatementCSV } from "@/app/actions/bank-csv-import";
+import { parseBankStatementCSV, parseBankStatementExcel } from "@/app/actions/bank-csv-import";
 import { commitSpendeeImport, rollbackSpendeeImport, checkDuplicates } from "@/app/actions/import";
 import type { ParseResult, ImportResult } from "@/app/actions/import";
 import { ImportSource } from "@prisma/client";
@@ -33,9 +33,10 @@ export function BankStatementImporter() {
         if (!file) return;
         const isPdf = file.name.toLowerCase().endsWith(".pdf");
         const isCsv = file.name.toLowerCase().endsWith(".csv");
+        const isExcel = [".xls", ".xlsx", ".xlsm", ".xlsb"].some(ext => file.name.toLowerCase().endsWith(ext));
 
-        if (!isPdf && !isCsv) {
-            setError("Please upload a .pdf or .csv bank statement.");
+        if (!isPdf && !isCsv && !isExcel) {
+            setError("Please upload a .pdf, .csv, or Excel bank statement.");
             return;
         }
 
@@ -50,7 +51,9 @@ export function BankStatementImporter() {
         try {
             const result = isPdf
                 ? await parseBankStatementPDF(formData)
-                : await parseBankStatementCSV(formData);
+                : isExcel
+                    ? await parseBankStatementExcel(formData)
+                    : await parseBankStatementCSV(formData);
             if (result.error) {
                 setError(result.error);
                 setIsLoading(false);
@@ -156,7 +159,7 @@ export function BankStatementImporter() {
                     <div className="mt-6 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-2xl text-sm text-blue-700 dark:text-blue-300 flex items-start gap-2">
                         <AlertCircle size={16} className="flex-shrink-0 mt-0.5" />
                         <div>
-                            <strong>Format Support:</strong> We support standard <strong>PDF</strong> and <strong>CSV</strong> exports for Axis and BoB. Ensure files are not password-protected.
+                            <strong>Format Support:</strong> We support standard <strong>PDF</strong>, <strong>CSV</strong>, and <strong>Excel (.xls, .xlsx)</strong> exports for Axis and BoB. Ensure files are not password-protected.
                         </div>
                     </div>
                 </div>
@@ -187,7 +190,7 @@ export function BankStatementImporter() {
                     <input
                         ref={fileInputRef}
                         type="file"
-                        accept=".pdf,.csv"
+                        accept=".pdf,.csv,.xls,.xlsx,.xlsb,.xlsm"
                         className="hidden"
                         onChange={handleFile}
                         id="bank-file-input"
@@ -212,7 +215,7 @@ export function BankStatementImporter() {
                                 </div>
                                 <div className="text-center">
                                     <p className="font-semibold text-gray-900 dark:text-gray-100">Tap to select {bank === "axis" ? "Axis Bank" : "Bank of Baroda"} Statement</p>
-                                    <p className="text-sm text-gray-500 mt-1">PDF or CSV format supported</p>
+                                    <p className="text-sm text-gray-500 mt-1">PDF, CSV or Excel format supported</p>
                                 </div>
                             </>
                         )}

@@ -2,6 +2,7 @@
 
 import { TransactionType } from '@prisma/client';
 import { ParseResult, SpendeeRow } from './import';
+import * as XLSX from 'xlsx';
 
 /**
  * Parses generic bank CSV statements.
@@ -17,125 +18,152 @@ export async function parseBankStatementCSV(formData: FormData): Promise<ParseRe
 
     try {
         const text = await file.text();
-        const lines = text.split(/\r?\n/).map(l => l.trim()).filter(l => l);
-
-        if (lines.length < 2) {
-            return { rows: [], walletNames: [], categories: [], dateRange: null, error: "File is empty or invalid." };
-        }
-
-        // Detect CSV separator (comma or semicolon)
-        const firstLine = lines[0];
-        const separator = (firstLine.match(/;/g) || []).length > (firstLine.match(/,/g) || []).length ? ';' : ',';
-
-        const rows: SpendeeRow[] = [];
-        let earliest: Date | null = null;
-        let latest: Date | null = null;
-        const walletName = bank === 'axis' ? 'axissavings' : bank === 'bob' ? 'bob' : 'Other';
-
-        // Find header row (some bank CSVs have junk lines at the top)
-        let headerIdx = -1;
-        const headerKeywords = ['date', 'txn date', 'tran date', 'value date', 'particulars', 'narration', 'description', 'amount', 'withdrawal', 'deposit', 'dr', 'cr'];
-
-        for (let i = 0; i < Math.min(lines.length, 50); i++) {
-            const l = lines[i].toLowerCase();
-            const matches = headerKeywords.filter(k => l.includes(k));
-            // If line contains at least 3 distinct keywords, it's likely our header
-            if (matches.length >= 3) {
-                headerIdx = i;
-                break;
-            }
-        }
-
-        if (headerIdx === -1) headerIdx = 0; // Fallback to first line if no clear header found
-
-        const headers = parseCSVLine(lines[headerIdx], separator).map(h => h.toLowerCase().trim());
-        const getIdx = (keys: string[]) => headers.findIndex(h => keys.some(k => h === k || h.includes(k)));
-
-        const dateIdx = getIdx(['date', 'txn date', 'tran date']);
-        const descIdx = getIdx(['description', 'narration', 'particulars']);
-        const amtIdx = getIdx(['amount', 'transaction amount']);
-        const drIdx = getIdx(['withdrawal', 'debit', 'dr']);
-        const crIdx = getIdx(['deposit', 'credit', 'cr']);
-        const typeIdx = getIdx(['type', 'cr/dr', 'cr_dr']);
-
-        if (dateIdx < 0 || (amtIdx < 0 && (drIdx < 0 || crIdx < 0))) {
-            return { rows: [], walletNames: [], categories: [], dateRange: null, error: "Could not identify CSV columns. Expected Date, Description, and Amount (or Debit/Credit)." };
-        }
-
-        for (let i = headerIdx + 1; i < lines.length; i++) {
-            const cols = parseCSVLine(lines[i], separator);
-            if (cols.length < headers.length * 0.7) continue; // Skip lines with too few columns
-
-            const dateStr = cols[dateIdx];
-            const description = descIdx >= 0 ? cols[descIdx] : "Bank Transaction";
-
-            const parsedDate = parseBankDate(dateStr);
-            if (!parsedDate) continue;
-
-            let amount = 0;
-            let type: TransactionType = TransactionType.EXPENSE;
-
-            if (amtIdx >= 0) {
-                const amtVal = cols[amtIdx].replace(/,/g, '');
-                amount = Math.abs(parseFloat(amtVal));
-
-                const typeVal = typeIdx >= 0 ? cols[typeIdx].toUpperCase() : "";
-                if (typeVal.includes('CR') || parseFloat(amtVal) > 0) {
-                    type = TransactionType.INCOME;
-                } else {
-                    type = TransactionType.EXPENSE;
-                }
-            } else {
-                const drVal = drIdx >= 0 ? parseFloat(cols[drIdx].replace(/,/g, '')) || 0 : 0;
-                const crVal = crIdx >= 0 ? parseFloat(cols[crIdx].replace(/,/g, '')) || 0 : 0;
-
-                if (crVal > 0) {
-                    amount = crVal;
-                    type = TransactionType.INCOME;
-                } else {
-                    amount = drVal;
-                    type = TransactionType.EXPENSE;
-                }
-            }
-
-            if (amount > 0) {
-                let category = "Other";
-                const descLow = description.toLowerCase();
-                if (descLow.includes("swiggy") || descLow.includes("zomato")) category = "Food & Drink";
-                else if (descLow.includes("amazon") || descLow.includes("flipkart")) category = "Shopping";
-                else if (descLow.includes("uber") || descLow.includes("ola")) category = "Petrol"; // mapping to existing
-                else if (descLow.includes("salary")) category = "Salary";
-                else if (descLow.includes("mutual fund") || descLow.includes("investment")) category = "Mutual Funds";
-                else category = "Other";
-
-                rows.push({
-                    date: parsedDate,
-                    category,
-                    amount: Math.round(amount * 100),
-                    currency: "INR",
-                    note: description.substring(0, 100),
-                    walletName: walletName,
-                    type
-                });
-
-                if (!earliest || parsedDate < earliest) earliest = parsedDate;
-                if (!latest || parsedDate > latest) latest = parsedDate;
-            }
-        }
-
-        return {
-            rows,
-            walletNames: [walletName],
-            categories: [...new Set(rows.map(r => r.category))],
-            dateRange: earliest && latest ? {
-                from: earliest.toLocaleDateString("en-IN"),
-                to: latest.toLocaleDateString("en-IN")
-            } : null
-        };
-
+        return await parseBankStatementCSVString(text, bank);
     } catch (e: any) {
         return { rows: [], walletNames: [], categories: [], dateRange: null, error: `Failed to parse CSV: ${e.message}` };
     }
+}
+
+/**
+ * Parses bank statements in Excel format (.xls, .xlsx, .xlsb, etc)
+ */
+export async function parseBankStatementExcel(formData: FormData): Promise<ParseResult> {
+    const file = formData.get('file') as File;
+    const bank = formData.get('bank') as string;
+
+    if (!file) {
+        return { rows: [], walletNames: [], categories: [], dateRange: null, error: "No file provided." };
+    }
+
+    try {
+        const arrayBuffer = await file.arrayBuffer();
+        const workbook = XLSX.read(arrayBuffer, { type: 'buffer', cellDates: true });
+        const firstSheetName = workbook.SheetNames[0];
+        const worksheet = workbook.Sheets[firstSheetName];
+        const csv = XLSX.utils.sheet_to_csv(worksheet);
+
+        return await parseBankStatementCSVString(csv, bank);
+    } catch (e: any) {
+        return { rows: [], walletNames: [], categories: [], dateRange: null, error: `Failed to parse Excel: ${e.message}` };
+    }
+}
+
+async function parseBankStatementCSVString(text: string, bank: string): Promise<ParseResult> {
+    const lines = text.split(/\r?\n/).map(l => l.trim()).filter(l => l);
+
+    if (lines.length < 2) {
+        return { rows: [], walletNames: [], categories: [], dateRange: null, error: "File is empty or invalid." };
+    }
+
+    // Detect CSV separator (comma or semicolon)
+    const firstLine = lines[0];
+    const separator = (firstLine.match(/;/g) || []).length > (firstLine.match(/,/g) || []).length ? ';' : ',';
+
+    const rows: SpendeeRow[] = [];
+    let earliest: Date | null = null;
+    let latest: Date | null = null;
+    const walletName = bank === 'axis' ? 'axissavings' : bank === 'bob' ? 'bob' : 'Other';
+
+    // Find header row (some bank CSVs have junk lines at the top)
+    let headerIdx = -1;
+    const headerKeywords = ['date', 'txn date', 'tran date', 'value date', 'particulars', 'narration', 'description', 'amount', 'withdrawal', 'deposit', 'dr', 'cr'];
+
+    for (let i = 0; i < Math.min(lines.length, 50); i++) {
+        const l = lines[i].toLowerCase();
+        const matches = headerKeywords.filter(k => l.includes(k));
+        // If line contains at least 3 distinct keywords, it's likely our header
+        if (matches.length >= 3) {
+            headerIdx = i;
+            break;
+        }
+    }
+
+    if (headerIdx === -1) headerIdx = 0; // Fallback to first line if no clear header found
+
+    const headers = parseCSVLine(lines[headerIdx], separator).map(h => h.toLowerCase().trim());
+    const getIdx = (keys: string[]) => headers.findIndex(h => keys.some(k => h === k || h.includes(k)));
+
+    const dateIdx = getIdx(['date', 'txn date', 'tran date']);
+    const descIdx = getIdx(['description', 'narration', 'particulars']);
+    const amtIdx = getIdx(['amount', 'transaction amount']);
+    const drIdx = getIdx(['withdrawal', 'debit', 'dr']);
+    const crIdx = getIdx(['deposit', 'credit', 'cr']);
+    const typeIdx = getIdx(['type', 'cr/dr', 'cr_dr']);
+
+    if (dateIdx < 0 || (amtIdx < 0 && (drIdx < 0 || crIdx < 0))) {
+        return { rows: [], walletNames: [], categories: [], dateRange: null, error: "Could not identify CSV columns. Expected Date, Description, and Amount (or Debit/Credit)." };
+    }
+
+    for (let i = headerIdx + 1; i < lines.length; i++) {
+        const cols = parseCSVLine(lines[i], separator);
+        if (cols.length < headers.length * 0.7) continue; // Skip lines with too few columns
+
+        const dateStr = cols[dateIdx];
+        const description = descIdx >= 0 ? cols[descIdx] : "Bank Transaction";
+
+        const parsedDate = parseBankDate(dateStr);
+        if (!parsedDate) continue;
+
+        let amount = 0;
+        let type: TransactionType = TransactionType.EXPENSE;
+
+        if (amtIdx >= 0) {
+            const amtVal = cols[amtIdx].replace(/,/g, '');
+            amount = Math.abs(parseFloat(amtVal));
+
+            const typeVal = typeIdx >= 0 ? cols[typeIdx].toUpperCase() : "";
+            if (typeVal.includes('CR') || parseFloat(amtVal) > 0) {
+                type = TransactionType.INCOME;
+            } else {
+                type = TransactionType.EXPENSE;
+            }
+        } else {
+            const drVal = drIdx >= 0 ? parseFloat(cols[drIdx].replace(/,/g, '')) || 0 : 0;
+            const crVal = crIdx >= 0 ? parseFloat(cols[crIdx].replace(/,/g, '')) || 0 : 0;
+
+            if (crVal > 0) {
+                amount = crVal;
+                type = TransactionType.INCOME;
+            } else {
+                amount = drVal;
+                type = TransactionType.EXPENSE;
+            }
+        }
+
+        if (amount > 0) {
+            let category = "Other";
+            const descLow = description.toLowerCase();
+            if (descLow.includes("swiggy") || descLow.includes("zomato")) category = "Food & Drink";
+            else if (descLow.includes("amazon") || descLow.includes("flipkart")) category = "Shopping";
+            else if (descLow.includes("uber") || descLow.includes("ola")) category = "Petrol"; // mapping to existing
+            else if (descLow.includes("salary")) category = "Salary";
+            else if (descLow.includes("mutual fund") || descLow.includes("investment")) category = "Mutual Funds";
+            else category = "Other";
+
+            rows.push({
+                date: parsedDate,
+                category,
+                amount: Math.round(amount * 100),
+                currency: "INR",
+                note: description.substring(0, 100),
+                walletName: walletName,
+                type
+            });
+
+            if (!earliest || parsedDate < earliest) earliest = parsedDate;
+            if (!latest || parsedDate > latest) latest = parsedDate;
+        }
+    }
+
+    return {
+        rows,
+        walletNames: [walletName],
+        categories: [...new Set(rows.map(r => r.category))],
+        dateRange: earliest && latest ? {
+            from: earliest.toLocaleDateString("en-IN"),
+            to: latest.toLocaleDateString("en-IN")
+        } : null
+    };
 }
 
 function parseCSVLine(line: string, separator: string): string[] {
