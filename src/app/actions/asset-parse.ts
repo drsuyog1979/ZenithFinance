@@ -38,7 +38,7 @@ export async function parseAssetStatement(formData: FormData): Promise<{
         } else if (fileName.endsWith('.csv')) {
             const text = await file.text();
             transactions = parseAssetCSV(text, source);
-        } else if ([".xls", ".xlsx", ".xlsm", ".xlsb"].some(ext => fileName.endsWith(ext))) {
+        } else if ([".xls", ".xlsx", ".xlsm", ".xlsb", ".xlv"].some(ext => fileName.endsWith(ext))) {
             const arrayBuffer = await file.arrayBuffer();
             const workbook = XLSX.read(arrayBuffer, { type: 'buffer' });
             const worksheet = workbook.Sheets[workbook.SheetNames[0]];

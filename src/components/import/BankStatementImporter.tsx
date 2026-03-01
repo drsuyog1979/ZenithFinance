@@ -32,7 +32,7 @@ export function BankStatementImporter() {
     async function processFile(file: File) {
         const isPdf = file.name.toLowerCase().endsWith(".pdf");
         const isCsv = file.name.toLowerCase().endsWith(".csv");
-        const isExcel = [".xls", ".xlsx", ".xlsm", ".xlsb"].some(ext => file.name.toLowerCase().endsWith(ext));
+        const isExcel = [".xls", ".xlsx", ".xlsm", ".xlsb", ".xlv"].some(ext => file.name.toLowerCase().endsWith(ext));
 
         if (!isPdf && !isCsv && !isExcel) {
             setError("Please upload a .pdf, .csv, or Excel bank statement.");
@@ -212,7 +212,7 @@ export function BankStatementImporter() {
                     <input
                         ref={fileInputRef}
                         type="file"
-                        accept=".pdf,.csv,.xls,.xlsx,.xlsb,.xlsm"
+                        accept=".pdf,.csv,.xls,.xlsx,.xlsb,.xlsm,.xlv"
                         className="hidden"
                         onChange={handleFileChange}
                         id="bank-file-input"

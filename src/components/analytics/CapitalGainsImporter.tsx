@@ -101,7 +101,7 @@ export function CapitalGainsImporter({ onComplete }: { onComplete: () => void })
                         disabled={isLoading}
                         className="hidden"
                         id="asset-upload"
-                        accept=".pdf,.csv,.xls,.xlsx,.xlsb,.xlsm"
+                        accept=".pdf,.csv,.xls,.xlsx,.xlsb,.xlsm,.xlv"
                     />
                     <label
                         htmlFor="asset-upload"
