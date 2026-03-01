@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { format } from "date-fns";
 import {
     ShoppingBag, Utensils, Car, HeartPulse, Home, Zap, Tv, Briefcase,
-    Search, Trash2, Edit2, Loader2, X, Check, Tag, TrendingUp, Phone, Banknote, Fuel, ShoppingBag, Heart, Coffee, Gamepad2, Plane, Gift, GraduationCap, Dumbbell, Beer, Music, Camera, Globe
+    Search, Trash2, Edit2, Loader2, X, Check, Tag, TrendingUp, Phone, Banknote, Fuel, Heart, Coffee, Gamepad2, Plane, Gift, GraduationCap, Dumbbell, Beer, Music, Camera, Globe
 } from "lucide-react";
 
 const ICON_MAP: Record<string, any> = {
