@@ -122,30 +122,49 @@ function parseAssetCSV(text: string, source: string): AssetTransaction[] {
     const lines = text.split(/\r?\n/).filter(l => l.trim());
     if (lines.length < 2) return [];
 
-    const result: AssetTransaction[] = [];
-    const headers = lines[0].toLowerCase().split(',');
+    let headerLineIdx = 0;
+    let headers = lines[0].toLowerCase().split(',');
 
-    // Find index of required columns
+    // CAMS Excel doesn't always put headers on line 0
+    if (!headers.some(h => h.includes('symbol') || h.includes('scheme') || h.includes('fund'))) {
+        for (let i = 0; i < Math.min(lines.length, 20); i++) {
+            const hCandidate = lines[i].toLowerCase().split(',');
+            if (hCandidate.some(h => h.includes('scheme name') || h.includes('symbol') || h.includes('instrument'))) {
+                headerLineIdx = i;
+                headers = hCandidate;
+                break;
+            }
+        }
+    }
+
+    const result: AssetTransaction[] = [];
     const find = (keywords: string[]) => headers.findIndex(h => keywords.some(k => h.includes(k)));
 
-    const symIdx = find(['symbol', 'instrument', 'scheme', 'stock']);
+    const symIdx = find(['scheme name', 'symbol', 'instrument', 'scheme', 'stock']);
     const dateIdx = find(['date', 'time']);
-    const typeIdx = find(['type', 'side', 'transaction']);
-    const qtyIdx = find(['qty', 'quantity', 'units']);
+    const typeIdx = find(['desc', 'type', 'side', 'transaction']);
+    const qtyIdx = find(['units', 'qty', 'quantity']);
     const priceIdx = find(['price', 'nav', 'rate']);
 
     if (symIdx < 0 || dateIdx < 0 || qtyIdx < 0 || priceIdx < 0) return [];
 
-    for (let i = 1; i < lines.length; i++) {
+    for (let i = headerLineIdx + 1; i < lines.length; i++) {
         const cols = parseCSVLine(lines[i], ',');
+        if (cols.length <= Math.max(symIdx, dateIdx, qtyIdx, priceIdx)) continue;
+
         const rawType = typeIdx >= 0 ? cols[typeIdx].toUpperCase() : "BUY";
-        const price = parseFloat(cols[priceIdx].replace(/,/g, ''));
-        const units = Math.abs(parseFloat(cols[qtyIdx].replace(/,/g, '')));
+        const priceStr = cols[priceIdx].replace(/,/g, '');
+        const qtyStr = cols[qtyIdx].replace(/,/g, '');
+
+        const price = parseFloat(priceStr);
+        const units = Math.abs(parseFloat(qtyStr));
+
+        if (isNaN(price) || isNaN(units)) continue;
 
         result.push({
             symbol: cols[symIdx],
             type: (rawType.includes("SELL") || rawType.includes("RED") || rawType.includes("OUT")) ? "SELL" : "BUY",
-            assetType: cols[symIdx].toLowerCase().includes("fund") ? AssetType.EQUITY_MF : AssetType.STOCK,
+            assetType: (cols[symIdx].toLowerCase().includes("fund") || (headers[2] && lines[i].includes("EQUITY"))) ? AssetType.EQUITY_MF : AssetType.STOCK,
             date: new Date(cols[dateIdx]),
             pricePaise: Math.round(price * 100),
             units: units
