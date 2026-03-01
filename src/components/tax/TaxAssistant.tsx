@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
-import { getTaxSummary, updateTaxProfile, getITRSummary } from "@/app/actions/tax";
+import { getTaxSummary, updateTaxProfile, getITRSummary, resetTaxProfile } from "@/app/actions/tax";
 import { TaxRegime, TaxpayerType } from "@prisma/client";
 import {
     ShieldAlert, Info, Calculator, Calendar, FileText,
@@ -22,10 +22,23 @@ export function TaxAssistant() {
     const loadData = async () => {
         setLoading(true);
         const res = await getTaxSummary();
-        if (res.error) setError(res.error);
+        if (res.error || !res.data) setError(res.error || "Failed to load summary");
         else {
             setSummary(res.data);
             if (!res.data.profile) setShowSetup(true);
+        }
+        setLoading(false);
+    };
+
+    const handleReset = async () => {
+        if (!confirm("Are you sure you want to reset your tax profile? This will clear your settings and advance tax reminders, and take you back to the initial setup.")) return;
+        setLoading(true);
+        const res = await resetTaxProfile();
+        if (res.error) alert(res.error);
+        else {
+            setShowSetup(true);
+            setSummary(null);
+            loadData(); // Re-fetch to clear states
         }
         setLoading(false);
     };
@@ -176,12 +189,20 @@ export function TaxAssistant() {
                                     <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-1">FY 2025–26 Projection</h2>
                                     <p className="text-sm text-gray-500 font-medium">Estimated liability based on current income</p>
                                 </div>
-                                <button
-                                    onClick={() => setShowSetup(true)}
-                                    className="px-4 py-2 bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 rounded-xl text-xs font-bold hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
-                                >
-                                    Edit Profile
-                                </button>
+                                <div className="flex gap-2">
+                                    <button
+                                        onClick={() => setShowSetup(true)}
+                                        className="px-4 py-2 bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 rounded-xl text-xs font-bold hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+                                    >
+                                        Edit Profile
+                                    </button>
+                                    <button
+                                        onClick={handleReset}
+                                        className="px-4 py-2 bg-red-50 dark:bg-red-950/20 text-red-600 dark:text-red-400 rounded-xl text-xs font-bold hover:bg-red-100 dark:hover:bg-red-900/30 transition-colors"
+                                    >
+                                        Reset Analysis
+                                    </button>
+                                </div>
                             </div>
 
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-8">

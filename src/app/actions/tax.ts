@@ -49,6 +49,19 @@ export async function updateTaxProfile(data: {
     }
 }
 
+export async function resetTaxProfile() {
+    try {
+        const userId = await getUserId();
+        await prisma.taxProfile.delete({ where: { userId } }).catch(() => { });
+        await prisma.reminder.deleteMany({
+            where: { userId, type: ReminderType.ADVANCE_TAX }
+        });
+        return { success: true };
+    } catch (error: any) {
+        return { error: error.message };
+    }
+}
+
 export async function getTaxSummary() {
     try {
         const userId = await getUserId();
@@ -152,6 +165,8 @@ export async function getITRSummary() {
             return acc;
         }, {} as Record<string, number>);
 
+        const totalIncome = Object.values(incomeBySource).reduce((s, amt) => s + amt, 0);
+
         const capitalGains = await prisma.assetSale.findMany({
             where: { userId, sellDate: { gte: fyStart, lte: fyEnd } }
         });
@@ -160,7 +175,7 @@ export async function getITRSummary() {
             data: {
                 profile,
                 incomeBySource,
-                totalIncome: incomeTransactions.reduce((s, t) => s + t.amount, 0),
+                totalIncome,
                 capitalGains,
                 fy: `${fyStart.getFullYear()}-${fyEnd.getFullYear().toString().slice(-2)}`
             }
