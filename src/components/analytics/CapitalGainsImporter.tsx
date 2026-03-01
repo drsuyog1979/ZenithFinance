@@ -9,11 +9,9 @@ export function CapitalGainsImporter({ onComplete }: { onComplete: () => void })
     const [isLoading, setIsLoading] = useState(false);
     const [source, setSource] = useState("cams");
     const [status, setStatus] = useState<{ type: 'success' | 'error', msg: string } | null>(null);
+    const [isDragging, setIsDragging] = useState(false);
 
-    async function handleFile(e: React.ChangeEvent<HTMLInputElement>) {
-        const file = e.target.files?.[0];
-        if (!file) return;
-
+    async function processFile(file: File) {
         setIsLoading(true);
         setStatus(null);
 
@@ -40,6 +38,32 @@ export function CapitalGainsImporter({ onComplete }: { onComplete: () => void })
         } finally {
             setIsLoading(false);
         }
+    }
+
+    async function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
+        const file = e.target.files?.[0];
+        if (file) await processFile(file);
+    }
+
+    function handleDragOver(e: React.DragEvent) {
+        e.preventDefault();
+        e.stopPropagation();
+        setIsDragging(true);
+    }
+
+    function handleDragLeave(e: React.DragEvent) {
+        e.preventDefault();
+        e.stopPropagation();
+        setIsDragging(false);
+    }
+
+    async function handleDrop(e: React.DragEvent) {
+        e.preventDefault();
+        e.stopPropagation();
+        setIsDragging(false);
+
+        const file = e.dataTransfer.files?.[0];
+        if (file) await processFile(file);
     }
 
     return (
@@ -73,7 +97,7 @@ export function CapitalGainsImporter({ onComplete }: { onComplete: () => void })
                 <div className="relative group">
                     <input
                         type="file"
-                        onChange={handleFile}
+                        onChange={handleFileChange}
                         disabled={isLoading}
                         className="hidden"
                         id="asset-upload"
@@ -81,7 +105,10 @@ export function CapitalGainsImporter({ onComplete }: { onComplete: () => void })
                     />
                     <label
                         htmlFor="asset-upload"
-                        className={`flex flex-col items-center justify-center gap-3 py-10 rounded-2xl border-2 border-dashed transition-all cursor-pointer ${isLoading ? 'opacity-50 pointer-events-none' : 'hover:border-indigo-500 border-gray-200 dark:border-gray-800'}`}
+                        onDragOver={handleDragOver}
+                        onDragLeave={handleDragLeave}
+                        onDrop={handleDrop}
+                        className={`flex flex-col items-center justify-center gap-3 py-10 rounded-2xl border-2 border-dashed transition-all cursor-pointer ${isLoading ? 'opacity-50 pointer-events-none' : isDragging ? 'border-indigo-500 bg-indigo-50 dark:bg-indigo-900/40' : 'hover:border-indigo-500 border-gray-200 dark:border-gray-800'}`}
                     >
                         {isLoading ? (
                             <Loader2 className="animate-spin text-indigo-500" size={32} />

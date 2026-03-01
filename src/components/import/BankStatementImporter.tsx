@@ -26,11 +26,10 @@ export function BankStatementImporter() {
     const [rollbackDone, setRollbackDone] = useState(false);
     const [potentialDuplicates, setPotentialDuplicates] = useState(0);
     const [fileFormat, setFileFormat] = useState<"pdf" | "csv">("pdf");
+    const [isDragging, setIsDragging] = useState(false);
     const fileInputRef = useRef<HTMLInputElement>(null);
 
-    async function handleFile(e: React.ChangeEvent<HTMLInputElement>) {
-        const file = e.target.files?.[0];
-        if (!file) return;
+    async function processFile(file: File) {
         const isPdf = file.name.toLowerCase().endsWith(".pdf");
         const isCsv = file.name.toLowerCase().endsWith(".csv");
         const isExcel = [".xls", ".xlsx", ".xlsm", ".xlsb"].some(ext => file.name.toLowerCase().endsWith(ext));
@@ -60,11 +59,11 @@ export function BankStatementImporter() {
                 return;
             }
             if (result.rows.length === 0) {
-                setError("No transactions found in this PDF. Please ensure it is an unlocked statement from the selected bank.");
+                setError("No transactions found in this file. Please ensure it is an unlocked statement.");
                 setIsLoading(false);
                 return;
             }
-            // Normalize dates (Serialized to strings from server action)
+            // Normalize dates
             const normalizedRows = result.rows.map(r => ({
                 ...r,
                 date: new Date(r.date)
@@ -72,17 +71,40 @@ export function BankStatementImporter() {
             const normalizedResult = { ...result, rows: normalizedRows };
 
             setParseResult(normalizedResult);
-
-            // Check for potential duplicates (soft match)
             const matches = await checkDuplicates(result.rows);
             setPotentialDuplicates(matches);
-
             setStep("preview");
         } catch (e: any) {
             setError(e.message);
         } finally {
             setIsLoading(false);
         }
+    }
+
+    async function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
+        const file = e.target.files?.[0];
+        if (file) await processFile(file);
+    }
+
+    function handleDragOver(e: React.DragEvent) {
+        e.preventDefault();
+        e.stopPropagation();
+        setIsDragging(true);
+    }
+
+    function handleDragLeave(e: React.DragEvent) {
+        e.preventDefault();
+        e.stopPropagation();
+        setIsDragging(false);
+    }
+
+    async function handleDrop(e: React.DragEvent) {
+        e.preventDefault();
+        e.stopPropagation();
+        setIsDragging(false);
+
+        const file = e.dataTransfer.files?.[0];
+        if (file) await processFile(file);
     }
 
     async function handleImport() {
@@ -192,15 +214,20 @@ export function BankStatementImporter() {
                         type="file"
                         accept=".pdf,.csv,.xls,.xlsx,.xlsb,.xlsm"
                         className="hidden"
-                        onChange={handleFile}
+                        onChange={handleFileChange}
                         id="bank-file-input"
                     />
 
                     <label
                         htmlFor="bank-file-input"
+                        onDragOver={handleDragOver}
+                        onDragLeave={handleDragLeave}
+                        onDrop={handleDrop}
                         className={`flex flex-col items-center justify-center gap-4 py-16 rounded-2xl border-2 border-dashed transition-all cursor-pointer ${isLoading
                             ? "border-blue-300 bg-blue-50 dark:border-blue-700 dark:bg-blue-900/20"
-                            : "border-gray-200 dark:border-gray-700 hover:border-[var(--color-brand-navy)] hover:bg-gray-50 dark:hover:bg-gray-800/50"
+                            : isDragging
+                                ? "border-indigo-500 bg-indigo-50 dark:border-indigo-500/30 dark:bg-indigo-900/40"
+                                : "border-gray-200 dark:border-gray-700 hover:border-[var(--color-brand-navy)] hover:bg-gray-50 dark:hover:bg-gray-800/50"
                             }`}
                     >
                         {isLoading ? (
