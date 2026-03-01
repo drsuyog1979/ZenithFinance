@@ -63,8 +63,8 @@ export function CapitalGainsImporter({ onComplete }: { onComplete: () => void })
                         onChange={(e) => setSource(e.target.value)}
                         className="w-full bg-gray-50 dark:bg-gray-800 border-none rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-indigo-500 dark:text-white"
                     >
-                        <option value="cams">CAMS / INDmoney (PDF/CSV)</option>
-                        <option value="zerodha">Zerodha (PDF/CSV)</option>
+                        <option value="cams">CAMS / INDmoney (PDF/CSV/Excel)</option>
+                        <option value="zerodha">Zerodha (PDF/CSV/Excel)</option>
                         <option value="groww">Groww (CSV)</option>
                         <option value="upstox">Upstox (CSV)</option>
                     </select>
