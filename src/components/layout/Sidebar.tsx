@@ -12,7 +12,6 @@ export function Sidebar() {
     { name: "Wallets", href: "/wallets", icon: Wallet },
     { name: "Transactions", href: "/transactions", icon: LayoutList },
     { name: "Analytics", href: "/analytics", icon: PieChart },
-    { name: "Capital Gains", href: "/capital-gains", icon: Coins },
     { name: "Import Data", href: "/import", icon: Upload },
   ];
 
