@@ -75,7 +75,7 @@ export function CapitalGainsImporter() {
             if (result.success) {
                 setStep("result");
             } else {
-                setError("Failed to save data.");
+                setError(result.message || "Failed to save data.");
             }
         } catch (e: any) {
             setError(e.message);
