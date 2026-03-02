@@ -278,10 +278,10 @@ export function CapitalGainsImporter() {
                     </p>
 
                     <a
-                        href="/capital-gains"
+                        href="/analytics"
                         className="w-full flex items-center justify-center gap-2 bg-[var(--color-brand-navy)] hover:bg-[var(--color-brand-navy-light)] text-white py-4 rounded-2xl font-semibold transition-colors shadow-lg"
                     >
-                        View Capital Gains Dashboard
+                        View in Analytics Dashboard
                         <ChevronRight size={20} />
                     </a>
                 </div>
