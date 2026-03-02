@@ -180,8 +180,8 @@ export async function saveCapitalGainsData(formData: FormData, replaceExisting: 
     });
 
     // Save Summaries from Sheet 4 and 5 (OVERALL_SUMMARY_EQUITY, OVERALL_SUMMARY_NONEQUITY) if they exist
-    const equitySummarySheet = workbook.Sheets["OVERALL_SUMMARY_EQUITY"];
-    const nonEquitySummarySheet = workbook.Sheets["OVERALL_SUMMARY_NONEQUITY"];
+    const equitySummarySheet = workbook.SheetNames.includes("OVERALL_SUMMARY_EQUITY") ? workbook.Sheets["OVERALL_SUMMARY_EQUITY"] : undefined;
+    const nonEquitySummarySheet = workbook.SheetNames.includes("OVERALL_SUMMARY_NONEQUITY") ? workbook.Sheets["OVERALL_SUMMARY_NONEQUITY"] : undefined;
 
     const parseSummarySheet = (sheet: XLSX.WorkSheet | undefined, assetClass: string) => {
         if (!sheet) return [];
