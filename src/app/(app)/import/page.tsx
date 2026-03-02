@@ -52,7 +52,7 @@ export default function ImportPage() {
                         }`}
                 >
                     <Coins size={18} className="hidden sm:block" />
-                    Capital Gains
+                    Capital Gains Statements (CAMS XLS)
                 </button>
             </div>
 

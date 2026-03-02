@@ -21,18 +21,14 @@ export async function parseCapitalGainsXLS(formData: FormData) {
 
     const sheetNames = workbook.SheetNames;
 
-    // Required sheets
+    // Required sheets (only TRXN_DETAILS is strictly required for parsing transactions)
     const requiredSheets = [
-        "TRXN_DETAILS",
-        "SCHEMEWISE_EQUTIY",
-        "SCHEMEWISE_NONEQUITY",
-        "OVERALL_SUMMARY_EQUITY",
-        "OVERALL_SUMMARY_NONEQUITY"
+        "TRXN_DETAILS"
     ];
 
     for (const sheet of requiredSheets) {
         if (!sheetNames.includes(sheet)) {
-            throw new Error(`Missing required sheet: ${sheet}`);
+            throw new Error(`Missing required sheet: ${sheet}. Please ensure you've uploaded a valid CAMS Capital Gains Statement.`);
         }
     }
 
@@ -158,11 +154,12 @@ export async function saveCapitalGainsData(formData: FormData, replaceExisting: 
         data: transactions
     });
 
-    // Save Summaries from Sheet 4 and 5 (OVERALL_SUMMARY_EQUITY, OVERALL_SUMMARY_NONEQUITY)
+    // Save Summaries from Sheet 4 and 5 (OVERALL_SUMMARY_EQUITY, OVERALL_SUMMARY_NONEQUITY) if they exist
     const equitySummarySheet = workbook.Sheets["OVERALL_SUMMARY_EQUITY"];
     const nonEquitySummarySheet = workbook.Sheets["OVERALL_SUMMARY_NONEQUITY"];
 
-    const parseSummarySheet = (sheet: XLSX.WorkSheet, assetClass: string) => {
+    const parseSummarySheet = (sheet: XLSX.WorkSheet | undefined, assetClass: string) => {
+        if (!sheet) return [];
         const data = XLSX.utils.sheet_to_json(sheet) as any[];
         // The sheet structure for summary usually has periods as columns or rows.
         // Based on user description: broken into quarterly periods: 01/04 to 15/06, etc.

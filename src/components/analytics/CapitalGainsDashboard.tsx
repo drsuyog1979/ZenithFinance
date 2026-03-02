@@ -7,7 +7,7 @@ import {
     Calendar, Tag, Hash, Wallet
 } from "lucide-react";
 import { getCapitalGainsSummary } from "@/app/actions/assets";
-import { CapitalGainsImporter } from "./CapitalGainsImporter";
+import { AssetTransactionsImporter } from "./AssetTransactionsImporter";
 
 export function CapitalGainsDashboard() {
     const [summary, setSummary] = useState<any>(null);
@@ -66,7 +66,7 @@ export function CapitalGainsDashboard() {
 
             {showImporter ? (
                 <div className="max-w-xl mx-auto">
-                    <CapitalGainsImporter onComplete={loadData} />
+                    <AssetTransactionsImporter onComplete={loadData} />
                 </div>
             ) : (
                 <>

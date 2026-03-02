@@ -5,7 +5,7 @@ import { Upload, FileText, CheckCircle2, AlertCircle, Loader2, Info } from "luci
 import { parseAssetStatement } from "@/app/actions/asset-parse";
 import { processAssetImports } from "@/app/actions/assets";
 
-export function CapitalGainsImporter({ onComplete }: { onComplete: () => void }) {
+export function AssetTransactionsImporter({ onComplete }: { onComplete: () => void }) {
     const [isLoading, setIsLoading] = useState(false);
     const [source, setSource] = useState("cams");
     const [status, setStatus] = useState<{ type: 'success' | 'error', msg: string } | null>(null);
@@ -73,8 +73,8 @@ export function CapitalGainsImporter({ onComplete }: { onComplete: () => void })
                     <Upload size={20} />
                 </div>
                 <div>
-                    <h2 className="text-lg font-bold text-gray-900 dark:text-gray-100">Import Statements</h2>
-                    <p className="text-xs text-gray-500">Mutual Funds & Stocks (PDF/CSV/Excel)</p>
+                    <h2 className="text-lg font-bold text-gray-900 dark:text-gray-100">Import Portfolio Transactions</h2>
+                    <p className="text-xs text-gray-500">Mutual Funds & Stocks (CAS/Tradebook)</p>
                 </div>
             </div>
 
@@ -87,8 +87,8 @@ export function CapitalGainsImporter({ onComplete }: { onComplete: () => void })
                         onChange={(e) => setSource(e.target.value)}
                         className="w-full bg-gray-50 dark:bg-gray-800 border-none rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-indigo-500 dark:text-white"
                     >
-                        <option value="cams">CAMS / INDmoney (PDF/CSV/Excel)</option>
-                        <option value="zerodha">Zerodha (PDF/CSV/Excel)</option>
+                        <option value="cams">CAMS CAS / INDmoney (PDF/CSV/Excel)</option>
+                        <option value="zerodha">Zerodha Tradebook (PDF/CSV/Excel)</option>
                         <option value="groww">Groww (CSV/Excel)</option>
                         <option value="upstox">Upstox (CSV/Excel)</option>
                     </select>
@@ -116,7 +116,7 @@ export function CapitalGainsImporter({ onComplete }: { onComplete: () => void })
                             <>
                                 <FileText className="text-gray-400 group-hover:text-indigo-500 transition-colors" size={32} />
                                 <div className="text-center">
-                                    <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">Click to upload statement</p>
+                                    <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">Click to upload CAS/Tradebook</p>
                                     <p className="text-xs text-gray-400 mt-1">PDF, CSV or Excel supported</p>
                                 </div>
                             </>
@@ -134,7 +134,7 @@ export function CapitalGainsImporter({ onComplete }: { onComplete: () => void })
                 <div className="p-4 bg-blue-50 dark:bg-blue-900/20 rounded-2xl flex items-start gap-3">
                     <Info size={16} className="text-blue-500 mt-0.5 shrink-0" />
                     <p className="text-[11px] text-blue-700 dark:text-blue-300 leading-relaxed">
-                        Zenith uses **FIFO (First-In-First-Out)** logic to match sales with purchases. For accurate capital gains, please import all your historical transactions from oldest to newest if possible.
+                        Zenith uses **FIFO (First-In-First-Out)** logic to match sales with purchases. For accurate portfolio tracking, please import all your historical transactions from oldest to newest if possible.
                     </p>
                 </div>
             </div>
