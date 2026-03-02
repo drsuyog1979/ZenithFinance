@@ -6,8 +6,9 @@ import { TrendLineChart } from "@/components/analytics/LineChart";
 import { SpendingHeatmap } from "@/components/analytics/Heatmap";
 import { SpendDonutChart } from "@/components/dashboard/DonutChart";
 import { TaxAssistant } from "@/components/tax/TaxAssistant";
+import { CapitalGainsDashboard } from "@/components/analytics/CapitalGainsDashboard";
 import { format, subMonths, isSameMonth, parseISO } from "date-fns";
-import { Activity, BarChart3, PieChart, IndianRupee } from "lucide-react";
+import { Activity, BarChart3, PieChart, IndianRupee, TrendingUp } from "lucide-react";
 import { useRouter } from "next/navigation";
 
 interface AnalyticsClientProps {
@@ -16,7 +17,7 @@ interface AnalyticsClientProps {
 
 export function AnalyticsClient({ initialTransactions }: AnalyticsClientProps) {
     const router = useRouter();
-    const [activeTab, setActiveTab] = useState<"cashflow" | "tax">("cashflow");
+    const [activeTab, setActiveTab] = useState<"cashflow" | "capital_gains" | "tax">("cashflow");
     const [heatmapType, setHeatmapType] = useState<"expenses" | "income" | "investments">("expenses");
     const currentDate = useMemo(() => new Date(), []);
 
@@ -106,6 +107,13 @@ export function AnalyticsClient({ initialTransactions }: AnalyticsClientProps) {
                         Cashflow
                     </button>
                     <button
+                        onClick={() => setActiveTab("capital_gains")}
+                        className={`flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-bold transition-all ${activeTab === "capital_gains" ? "bg-white dark:bg-gray-700 text-blue-600 shadow-md ring-1 ring-black/5" : "text-gray-500 hover:bg-gray-50 dark:hover:bg-gray-700/50"}`}
+                    >
+                        <TrendingUp size={18} />
+                        Capital Gains
+                    </button>
+                    <button
                         onClick={() => setActiveTab("tax")}
                         className={`flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-bold transition-all ${activeTab === "tax" ? "bg-white dark:bg-gray-700 text-emerald-600 shadow-md ring-1 ring-black/5" : "text-gray-500 hover:bg-gray-50 dark:hover:bg-gray-700/50"}`}
                     >
@@ -160,6 +168,10 @@ export function AnalyticsClient({ initialTransactions }: AnalyticsClientProps) {
                         </div>
                         <TrendLineChart data={lineData} />
                     </div>
+                </div>
+            ) : activeTab === "capital_gains" ? (
+                <div className="animate-in fade-in slide-in-from-bottom-2 duration-500">
+                    <CapitalGainsDashboard />
                 </div>
             ) : (
                 <div className="animate-in fade-in slide-in-from-bottom-2 duration-500">
