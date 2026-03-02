@@ -33,10 +33,21 @@ export async function parseCapitalGainsXLS(formData: FormData) {
     }
 
     const trxnSheet = workbook.Sheets["TRXN_DETAILS"];
-    const trxnData = XLSX.utils.sheet_to_json(trxnSheet) as any[];
+
+    // Find Header Row dynamically
+    const rawData = XLSX.utils.sheet_to_json(trxnSheet, { header: 1 }) as any[][];
+    let headerRowIndex = 0;
+    for (let i = 0; i < 20 && i < rawData.length; i++) {
+        if (rawData[i] && rawData[i].includes("Scheme Name") && rawData[i].includes("AMC Name")) {
+            headerRowIndex = i;
+            break;
+        }
+    }
+
+    const trxnData = XLSX.utils.sheet_to_json(trxnSheet, { range: headerRowIndex }) as any[];
 
     // Detect Financial Year from first transaction date if not provided in filename
-    // Date_1 format: DD-Mon-YYYY (e.g., "01-Jul-2025")
+    // Date format: DD-Mon-YYYY (e.g., "01-Jul-2025")
     const parseDate = (dateStr: any) => {
         if (!dateStr) return null;
         // xlsx might parse it as a date object if it's actual Excel date
@@ -45,7 +56,8 @@ export async function parseCapitalGainsXLS(formData: FormData) {
         return isNaN(d.getTime()) ? null : d;
     };
 
-    const firstDate = parseDate(trxnData[0]?.Date_1);
+    // Use "Date" (Sell Date) instead of "Date_1" (Purchase Date) for FY detection
+    const firstDate = parseDate(trxnData[0]?.Date);
     let detectedFY = "";
     if (firstDate) {
         const year = firstDate.getFullYear();
@@ -85,16 +97,29 @@ export async function saveCapitalGainsData(formData: FormData, replaceExisting: 
     const buffer = await file.arrayBuffer();
     const workbook = XLSX.read(buffer, { type: "array" });
 
-    const trxnData = XLSX.utils.sheet_to_json(workbook.Sheets["TRXN_DETAILS"]) as any[];
+    const trxnSheet = workbook.Sheets["TRXN_DETAILS"];
+
+    // Find Header Row dynamically
+    const rawData = XLSX.utils.sheet_to_json(trxnSheet, { header: 1 }) as any[][];
+    let headerRowIndex = 0;
+    for (let i = 0; i < 20 && i < rawData.length; i++) {
+        if (rawData[i] && rawData[i].includes("Scheme Name") && rawData[i].includes("AMC Name")) {
+            headerRowIndex = i;
+            break;
+        }
+    }
+
+    const trxnData = XLSX.utils.sheet_to_json(trxnSheet, { range: headerRowIndex }) as any[];
 
     // Detect FY
-    const parseDate = (dateStr: string | Date) => {
+    const parseDate = (dateStr: string | Date | undefined) => {
+        if (!dateStr) return null;
         if (dateStr instanceof Date) return dateStr;
         const d = new Date(dateStr);
         return isNaN(d.getTime()) ? null : d;
     };
 
-    const firstDate = parseDate(trxnData[0]?.Date_1);
+    const firstDate = parseDate(trxnData[0]?.Date);
     let financialYear = "";
     if (firstDate) {
         const year = firstDate.getFullYear();
@@ -131,8 +156,8 @@ export async function saveCapitalGainsData(formData: FormData, replaceExisting: 
         schemeName: String(t["Scheme Name"] || ""),
         isin: t["ISIN"] || null, // Might not be in primary columns but sometimes present
         assetClass: String(t["ASSET CLASS"] || ""),
-        transactionType: String(t["Desc_1"] || ""),
-        transactionDate: parseDate(t["Date_1"]) || new Date(),
+        transactionType: String(t["Desc"] || ""), // Desc is the Sell action (e.g. Redemption)
+        transactionDate: parseDate(t["Date"]) || new Date(), // Date is the Sell date
         amount: parseFloat(t["Amount"]) || 0,
         unitsPurchased: parseFloat(t["PurhUnit"]) || 0,
         unitsRedeemed: parseFloat(t["RedUnits"]) || 0,
