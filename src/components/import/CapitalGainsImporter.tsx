@@ -217,6 +217,13 @@ export function CapitalGainsImporter() {
                         </div>
                     </div>
 
+                    {error && (
+                        <div className="mt-6 p-4 bg-red-50 dark:bg-red-900/20 rounded-xl flex items-start gap-3 text-red-600 dark:text-red-400 text-sm">
+                            <AlertCircle size={18} className="flex-shrink-0 mt-0.5" />
+                            <p>{error}</p>
+                        </div>
+                    )}
+
                     <button
                         onClick={() => handleImport(false)}
                         disabled={isLoading}

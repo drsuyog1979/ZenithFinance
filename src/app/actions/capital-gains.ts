@@ -6,6 +6,10 @@ import { createClient } from "@/utils/supabase/server";
 import * as XLSX from "xlsx";
 
 async function getUserId() {
+    // Temp bypass for local script
+    if (process.env.TEST_SAVE) {
+        return "temp-test-id";
+    }
     const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) throw new Error("Unauthorized");
@@ -131,98 +135,104 @@ export async function saveCapitalGainsData(formData: FormData, replaceExisting: 
         }
     }
 
-    if (replaceExisting) {
-        await prisma.capitalGainsTransaction.deleteMany({
-            where: { userId, financialYear }
-        });
-        await prisma.capitalGainsSummary.deleteMany({
-            where: { userId, financialYear }
-        });
-    } else {
-        // Check if data already exists for this FY
-        const existing = await prisma.capitalGainsTransaction.findFirst({
-            where: { userId, financialYear }
-        });
-        if (existing) {
-            return { success: false, error: "DUPLICATE_FY", financialYear };
+    try {
+        if (replaceExisting) {
+            await prisma.capitalGainsTransaction.deleteMany({
+                where: { userId, financialYear }
+            });
+            await prisma.capitalGainsSummary.deleteMany({
+                where: { userId, financialYear }
+            });
+        } else {
+            // Check if data already exists for this FY
+            const existing = await prisma.capitalGainsTransaction.findFirst({
+                where: { userId, financialYear }
+            });
+            if (existing) {
+                return { success: false, error: "DUPLICATE_FY", financialYear };
+            }
         }
-    }
 
-    // Save Transactions
-    const transactions = trxnData.map(t => ({
-        userId,
-        amcName: String(t["AMC Name"] || ""),
-        folioNo: String(t["Folio No"] || ""),
-        schemeName: String(t["Scheme Name"] || ""),
-        isin: t["ISIN"] || null, // Might not be in primary columns but sometimes present
-        assetClass: String(t["ASSET CLASS"] || ""),
-        transactionType: String(t["Desc"] || ""), // Desc is the Sell action (e.g. Redemption)
-        transactionDate: parseDate(t["Date"]) || new Date(), // Date is the Sell date
-        amount: parseFloat(t["Amount"]) || 0,
-        unitsPurchased: parseFloat(t["PurhUnit"]) || 0,
-        unitsRedeemed: parseFloat(t["RedUnits"]) || 0,
-        unitCost: parseFloat(t["Unit Cost"]) || 0,
-        indexedCost: parseFloat(t["Indexed Cost"]) || null,
-        grandfatheredUnits: parseFloat(t["Units As On 31/01/2018 (Grandfathered Units)"]) || null,
-        grandfatheredNav: parseFloat(t["NAV As On 31/01/2018 (Grandfathered NAV)"]) || null,
-        grandfatheredValue: parseFloat(t["Market Value As On 31/01/2018 (Grandfathered Value)"]) || null,
-        shortTermGain: parseFloat(t["Short Term"]) || null,
-        longTermGainWithIndex: parseFloat(t["Long Term With Index"]) || null,
-        longTermGainWithoutIndex: parseFloat(t["Long Term Without Index"]) || null,
-        taxPercentage: parseFloat(t["Tax Perc"]) || null,
-        taxDeductible: parseFloat(t["Tax Deduct"]) || null,
-        taxSurcharge: parseFloat(t["Tax Surcharge"]) || null,
-        financialYear,
-    }));
+        // Save Transactions
+        const transactions = trxnData.map(t => ({
+            userId,
+            amcName: String(t["AMC Name"] || ""),
+            folioNo: String(t["Folio No"] || ""),
+            schemeName: String(t["Scheme Name"] || ""),
+            isin: t["ISIN"] || null, // Might not be in primary columns but sometimes present
+            assetClass: String(t["ASSET CLASS"] || ""),
+            transactionType: String(t["Desc"] || ""), // Desc is the Sell action (e.g. Redemption)
+            transactionDate: parseDate(t["Date"]) || new Date(), // Date is the Sell date
+            amount: parseFloat(t["Amount"]) || 0,
+            unitsPurchased: parseFloat(t["PurhUnit"]) || 0,
+            unitsRedeemed: parseFloat(t["RedUnits"]) || 0,
+            unitCost: parseFloat(t["Unit Cost"]) || 0,
+            indexedCost: parseFloat(t["Indexed Cost"]) || null,
+            grandfatheredUnits: parseFloat(t["Units As On 31/01/2018 (Grandfathered Units)"]) || null,
+            grandfatheredNav: parseFloat(t["NAV As On 31/01/2018 (Grandfathered NAV)"]) || null,
+            grandfatheredValue: parseFloat(t["Market Value As On 31/01/2018 (Grandfathered Value)"]) || null,
+            shortTermGain: parseFloat(t["Short Term"]) || null,
+            longTermGainWithIndex: parseFloat(t["Long Term With Index"]) || null,
+            longTermGainWithoutIndex: parseFloat(t["Long Term Without Index"]) || null,
+            taxPercentage: parseFloat(t["Tax Perc"]) || null,
+            taxDeductible: parseFloat(t["Tax Deduct"]) || null,
+            taxSurcharge: parseFloat(t["Tax Surcharge"]) || null,
+            financialYear,
+        }));
 
-    await prisma.capitalGainsTransaction.createMany({
-        data: transactions
-    });
-
-    // Save Summaries from Sheet 4 and 5 (OVERALL_SUMMARY_EQUITY, OVERALL_SUMMARY_NONEQUITY) if they exist
-    const equitySummarySheet = workbook.SheetNames.includes("OVERALL_SUMMARY_EQUITY") ? workbook.Sheets["OVERALL_SUMMARY_EQUITY"] : undefined;
-    const nonEquitySummarySheet = workbook.SheetNames.includes("OVERALL_SUMMARY_NONEQUITY") ? workbook.Sheets["OVERALL_SUMMARY_NONEQUITY"] : undefined;
-
-    const parseSummarySheet = (sheet: XLSX.WorkSheet | undefined, assetClass: string) => {
-        if (!sheet) return [];
-        const data = XLSX.utils.sheet_to_json(sheet) as any[];
-        // The sheet structure for summary usually has periods as columns or rows.
-        // Based on user description: broken into quarterly periods: 01/04 to 15/06, etc.
-        // We'll try to find rows that look like periods.
-        return data.filter(r => r["__EMPTY"]?.includes("to") || r["Period"]?.includes("to") || (typeof r === 'object' && Object.values(r).some(v => String(v).includes("to"))))
-            .map(r => {
-                // Find the period string
-                const periodStr = Object.values(r).find(v => String(v).includes("to")) as string;
-                if (!periodStr) return null;
-
-                return {
-                    userId,
-                    financialYear,
-                    assetClass,
-                    period: periodStr,
-                    fullValueConsideration: parseFloat(r["Full Value Consideration"]) || 0,
-                    costOfAcquisition: parseFloat(r["Cost of Acquisition"]) || 0,
-                    shortTermGainLoss: parseFloat(r["Short Term Capital Gain/Loss"]) || 0,
-                    fairMarketValue: parseFloat(r["Fair Market Value of capital asset as per section 55(2)(ac)"]) || null,
-                    longTermGainWithIndex: parseFloat(r["Long Term With Index Capital Gain/Loss"]) || 0,
-                    longTermGainWithoutIndex: parseFloat(r["Long Term Without Index Capital Gain/Loss"]) || 0,
-                };
-            }).filter(Boolean);
-    };
-
-    const summaries = [
-        ...parseSummarySheet(equitySummarySheet, "EQUITY"),
-        ...parseSummarySheet(nonEquitySummarySheet, "DEBT/NON-EQUITY")
-    ];
-
-    if (summaries.length > 0) {
-        await prisma.capitalGainsSummary.createMany({
-            data: summaries as any[]
+        await prisma.capitalGainsTransaction.createMany({
+            data: transactions
         });
-    }
 
-    revalidatePath("/capital-gains");
-    return { success: true, financialYear };
+        // Save Summaries from Sheet 4 and 5 (OVERALL_SUMMARY_EQUITY, OVERALL_SUMMARY_NONEQUITY) if they exist
+        const equitySummarySheet = workbook.SheetNames.includes("OVERALL_SUMMARY_EQUITY") ? workbook.Sheets["OVERALL_SUMMARY_EQUITY"] : undefined;
+        const nonEquitySummarySheet = workbook.SheetNames.includes("OVERALL_SUMMARY_NONEQUITY") ? workbook.Sheets["OVERALL_SUMMARY_NONEQUITY"] : undefined;
+
+        const parseSummarySheet = (sheet: XLSX.WorkSheet | undefined, assetClass: string) => {
+            if (!sheet) return [];
+            const data = XLSX.utils.sheet_to_json(sheet) as any[];
+            // The sheet structure for summary usually has periods as columns or rows.
+            // Based on user description: broken into quarterly periods: 01/04 to 15/06, etc.
+            // We'll try to find rows that look like periods.
+            return data.filter(r => r["__EMPTY"]?.includes("to") || r["Period"]?.includes("to") || (typeof r === 'object' && Object.values(r).some(v => String(v).includes("to"))))
+                .map(r => {
+                    // Find the period string
+                    const periodStr = Object.values(r).find(v => String(v).includes("to")) as string;
+                    if (!periodStr) return null;
+
+                    return {
+                        userId,
+                        financialYear,
+                        assetClass,
+                        period: periodStr,
+                        fullValueConsideration: parseFloat(r["Full Value Consideration"]) || 0,
+                        costOfAcquisition: parseFloat(r["Cost of Acquisition"]) || 0,
+                        shortTermGainLoss: parseFloat(r["Short Term Capital Gain/Loss"]) || 0,
+                        fairMarketValue: parseFloat(r["Fair Market Value of capital asset as per section 55(2)(ac)"]) || null,
+                        longTermGainWithIndex: parseFloat(r["Long Term With Index Capital Gain/Loss"]) || 0,
+                        longTermGainWithoutIndex: parseFloat(r["Long Term Without Index Capital Gain/Loss"]) || 0,
+                    };
+                }).filter(Boolean);
+        };
+
+        const summaries = [
+            ...parseSummarySheet(equitySummarySheet, "EQUITY"),
+            ...parseSummarySheet(nonEquitySummarySheet, "DEBT/NON-EQUITY")
+        ];
+
+        if (summaries.length > 0) {
+            await prisma.capitalGainsSummary.createMany({
+                data: summaries as any[]
+            });
+        }
+
+        revalidatePath("/capital-gains");
+        revalidatePath("/analytics");
+        return { success: true, financialYear };
+    } catch (e: any) {
+        console.error("Database Save Error:", e);
+        return { success: false, error: "DB_ERROR", message: e.message || String(e) };
+    }
 }
 
 export async function getCapitalGainsSummary(financialYear: string) {
