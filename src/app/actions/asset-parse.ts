@@ -55,7 +55,17 @@ export async function parseAssetStatement(formData: FormData): Promise<{
         }
 
         if (transactions.length === 0) {
-            // If total failure, let's provide more info in the error
+            // Check if this looks like a Capital Gains statement
+            if (fileName.endsWith('.xls') || fileName.endsWith('.xlsx')) {
+                const buffer = Buffer.from(await file.arrayBuffer());
+                const workbook = XLSX.read(buffer, { type: 'buffer' });
+                if (workbook.SheetNames.includes('TRXN_DETAILS') || workbook.SheetNames.includes('SCHEMEWISE_EQUTIY')) {
+                    return {
+                        transactions: [],
+                        error: "This looks like a Capital Gains statement. Please use the 'Capital Gains' tab on the Import page instead."
+                    };
+                }
+            }
             // If total failure, let's provide more info in the error
             return { transactions: [], error: "No transactions identified. Ensure you've uploaded a valid transaction statement (CAS) from CAMS/Zerodha/Groww." };
         }

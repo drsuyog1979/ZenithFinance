@@ -3,10 +3,11 @@
 import { useState } from "react";
 import { SpendeeImporter } from "@/components/import/SpendeeImporter";
 import { BankStatementImporter } from "@/components/import/BankStatementImporter";
-import { Upload, FileText, ArrowRightLeft } from "lucide-react";
+import { CapitalGainsImporter } from "@/components/import/CapitalGainsImporter";
+import { Upload, FileText, ArrowRightLeft, Coins } from "lucide-react";
 
 export default function ImportPage() {
-    const [importType, setImportType] = useState<"csv" | "pdf">("pdf");
+    const [importType, setImportType] = useState<"csv" | "pdf" | "cg">("pdf");
 
     return (
         <div className="p-4 md:p-8 max-w-2xl mx-auto pb-24 md:pb-8">
@@ -43,9 +44,19 @@ export default function ImportPage() {
                     <ArrowRightLeft size={18} className="hidden sm:block" />
                     Expenses
                 </button>
+                <button
+                    onClick={() => setImportType("cg")}
+                    className={`flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-xl text-xs sm:text-sm font-semibold transition-all ${importType === "cg"
+                        ? "bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-400 shadow-sm"
+                        : "text-gray-500 hover:bg-gray-50 dark:hover:bg-gray-800"
+                        }`}
+                >
+                    <Coins size={18} className="hidden sm:block" />
+                    Capital Gains Statements (CAMS XLS)
+                </button>
             </div>
 
-            {importType === "csv" ? <SpendeeImporter /> : <BankStatementImporter />}
+            {importType === "csv" ? <SpendeeImporter /> : importType === "pdf" ? <BankStatementImporter /> : <CapitalGainsImporter />}
         </div>
     );
 }
