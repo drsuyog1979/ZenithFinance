@@ -96,21 +96,40 @@ export async function getTaxSummary() {
         const monthsPassed = Math.max(1, differenceInMonths(now, fyStart) + 1);
         const projectedAnnualIncome = Math.round((realizedIncome / monthsPassed) * 12);
 
-        // Get Capital Gains from Phase 2
-        let totalGain = 0;
+        // Get Capital Gains
+        const fyString = `${fyStart.getFullYear()}-${fyEnd.getFullYear().toString().slice(-2)}`;
+        let stcgEquity = 0;
+        let ltcgEquity = 0;
+        let stcgDebt = 0;
+        let ltcgDebt = 0;
+
         try {
-            const capitalGains = await prisma.assetSale.aggregate({
-                where: { userId, sellDate: { gte: fyStart, lte: fyEnd } },
-                _sum: { gainAmountPaise: true }
+            const cgTransactions = await prisma.capitalGainsTransaction.findMany({
+                where: { userId, financialYear: fyString }
             });
-            totalGain = capitalGains._sum?.gainAmountPaise || 0;
+
+            for (const t of cgTransactions) {
+                const isEquity = t.assetClass?.toUpperCase().includes("EQUITY");
+                const stGain = t.shortTermGain || 0;
+                const ltGain = t.longTermGainWithoutIndex || 0;
+
+                if (isEquity) {
+                    stcgEquity += stGain;
+                    ltcgEquity += ltGain;
+                } else {
+                    stcgDebt += stGain;
+                    ltcgDebt += ltGain;
+                }
+            }
         } catch (e) {
-            console.error("Failed to aggregate capital gains", e);
+            console.error("Failed to get capital gains", e);
         }
+
+        const totalGain = Math.round((stcgEquity + ltcgEquity + stcgDebt + ltcgDebt) * 100);
 
         let estimatedTax = 0;
         if (profile) {
-            estimatedTax = calculateTax(projectedAnnualIncome, totalGain, profile);
+            estimatedTax = calculateTax(projectedAnnualIncome, { stcgEquity, ltcgEquity, stcgDebt, ltcgDebt }, profile);
         }
 
         const reminders = await prisma.reminder.findMany({
@@ -123,6 +142,13 @@ export async function getTaxSummary() {
                 profile,
                 realizedIncome,
                 projectedAnnualIncome,
+                capitalGains: {
+                    stcgEquity: stcgEquity * 100,
+                    ltcgEquity: ltcgEquity * 100,
+                    stcgDebt: stcgDebt * 100,
+                    ltcgDebt: ltcgDebt * 100,
+                    total: totalGain
+                },
                 realizedGains: totalGain,
                 estimatedTax,
                 reminders
@@ -167,9 +193,18 @@ export async function getITRSummary() {
 
         const totalIncome = Object.values(incomeBySource).reduce((s, amt) => s + amt, 0);
 
-        const capitalGains = await prisma.assetSale.findMany({
-            where: { userId, sellDate: { gte: fyStart, lte: fyEnd } }
+        const fyString = `${fyStart.getFullYear()}-${fyEnd.getFullYear().toString().slice(-2)}`;
+        const capitalGainsData = await prisma.capitalGainsTransaction.findMany({
+            where: { userId, financialYear: fyString }
         });
+
+        const capitalGains = capitalGainsData.map(g => ({
+            symbol: g.schemeName,
+            assetType: g.assetClass,
+            buyDate: g.transactionDate,
+            sellDate: g.transactionDate,
+            gainAmountPaise: Math.round(((g.shortTermGain || 0) + (g.longTermGainWithoutIndex || 0)) * 100)
+        }));
 
         return {
             data: {
@@ -185,62 +220,65 @@ export async function getITRSummary() {
     }
 }
 
-function calculateTax(incomePaise: number, gainsPaise: number, profile: any) {
+function calculateTax(incomePaise: number, capitalGains: { stcgEquity: number, ltcgEquity: number, stcgDebt: number, ltcgDebt: number }, profile: any) {
     const income = (incomePaise || 0) / 100;
     const deductions = (profile?.deductions as any) || {};
     const incomeSource = profile?.incomeSource || "";
 
-    // 1. Calculate Taxable Income
-    let taxableIncome = income;
+    // 1. Calculate Core Taxable Income (Income + Debt Gains)
+    let coreIncome = income + capitalGains.stcgDebt + capitalGains.ltcgDebt;
 
     if (profile?.regime === "NEW") {
-        // Standard Deduction: 75,000 for salaried
         if (incomeSource.toLowerCase().includes("salaried")) {
-            taxableIncome -= 75000;
+            coreIncome -= 75000;
         }
-        // New regime usually doesn't have 80C, 80D etc.
     } else {
-        // Old Regime Deductions
         const section80C = Math.min(deductions.section80C || 0, 150000);
         const section80D = deductions.section80D || 0;
         const standardDeduction = incomeSource.toLowerCase().includes("salaried") ? 50000 : 0;
 
-        taxableIncome = taxableIncome - section80C - section80D - standardDeduction;
+        coreIncome = coreIncome - section80C - section80D - standardDeduction;
     }
 
-    taxableIncome = Math.max(0, taxableIncome);
+    coreIncome = Math.max(0, coreIncome);
 
-    // 2. Apply Slabs (FY 2025-26)
+    // 2. Apply Slabs to Core Income
     let tax = 0;
     if (profile.regime === "NEW") {
-        if (taxableIncome <= 300000) tax = 0;
-        else if (taxableIncome <= 700000) tax = (taxableIncome - 300000) * 0.05;
-        else if (taxableIncome <= 1000000) tax = 20000 + (taxableIncome - 700000) * 0.10;
-        else if (taxableIncome <= 1200000) tax = 50000 + (taxableIncome - 1000000) * 0.15;
-        else if (taxableIncome <= 1500000) tax = 80000 + (taxableIncome - 1200000) * 0.20;
-        else tax = 140000 + (taxableIncome - 1500000) * 0.30;
+        if (coreIncome <= 300000) tax = 0;
+        else if (coreIncome <= 700000) tax = (coreIncome - 300000) * 0.05;
+        else if (coreIncome <= 1000000) tax = 20000 + (coreIncome - 700000) * 0.10;
+        else if (coreIncome <= 1200000) tax = 50000 + (coreIncome - 1000000) * 0.15;
+        else if (coreIncome <= 1500000) tax = 80000 + (coreIncome - 1200000) * 0.20;
+        else tax = 140000 + (coreIncome - 1500000) * 0.30;
 
-        // Rebate u/s 87A for New Regime: No tax up to 7L income
-        if (taxableIncome <= 700000) tax = 0;
+        if (coreIncome <= 700000) tax = 0;
     } else {
-        // Old Regime (Individual)
         let slab1 = 250000;
         if (profile.taxpayerType === "SENIOR_CITIZEN") slab1 = 300000;
         if (profile.taxpayerType === "SUPER_SENIOR_CITIZEN") slab1 = 500000;
 
-        if (taxableIncome <= slab1) tax = 0;
-        else if (taxableIncome <= 500000) tax = (taxableIncome - slab1) * 0.05;
-        else if (taxableIncome <= 1000000) tax = (500000 - slab1) * 0.05 + (taxableIncome - 500000) * 0.20;
-        else tax = (500000 - slab1) * 0.05 + 100000 + (taxableIncome - 1000000) * 0.30;
+        if (coreIncome <= slab1) tax = 0;
+        else if (coreIncome <= 500000) tax = (coreIncome - slab1) * 0.05;
+        else if (coreIncome <= 1000000) tax = (500000 - slab1) * 0.05 + (coreIncome - 500000) * 0.20;
+        else tax = (500000 - slab1) * 0.05 + 100000 + (coreIncome - 1000000) * 0.30;
 
-        // Rebate u/s 87A for Old Regime: Up to 5L income
-        if (taxableIncome <= 500000) tax = 0;
+        if (coreIncome <= 500000) tax = 0;
     }
 
-    // Add 4% Cess
+    // 3. Add Special Rate Taxes for Equity Capital Gains
+    if (capitalGains.stcgEquity > 0) {
+        tax += capitalGains.stcgEquity * 0.20;
+    }
+
+    if (capitalGains.ltcgEquity > 125000) {
+        tax += (capitalGains.ltcgEquity - 125000) * 0.125;
+    }
+
+    // 4. Add 4% Cess
     tax = tax * 1.04;
 
-    return Math.round(tax * 100); // Return in paise
+    return Math.round(tax * 100);
 }
 
 async function syncAdvanceTaxReminders(userId: string, profile: any) {

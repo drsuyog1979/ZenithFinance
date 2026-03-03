@@ -206,20 +206,63 @@ export function TaxAssistant() {
                             </div>
 
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-8">
-                                <div className="space-y-1">
-                                    <p className="text-[10px] uppercase tracking-widest text-gray-400 font-black">Annual Taxable Income</p>
-                                    <p className="text-4xl font-black text-[var(--color-brand-navy)] dark:text-white">
-                                        {formatINR(summary.projectedAnnualIncome)}
-                                    </p>
+                                <div className="space-y-4">
+                                    <div className="space-y-1">
+                                        <p className="text-[10px] uppercase tracking-widest text-gray-400 font-black">Est. Total Income</p>
+                                        <p className="text-4xl font-black text-[var(--color-brand-navy)] dark:text-white">
+                                            {formatINR(summary.projectedAnnualIncome + (summary.capitalGains?.total || 0))}
+                                        </p>
+                                    </div>
+
+                                    <div className="bg-gray-50 dark:bg-gray-800/50 rounded-2xl p-4 border border-gray-100 dark:border-gray-800">
+                                        <p className="text-[10px] uppercase tracking-widest text-gray-400 font-black mb-3">Sources of Income</p>
+                                        <div className="space-y-2">
+                                            <div className="flex justify-between items-center text-xs">
+                                                <span className="text-gray-600 dark:text-gray-300 font-medium flex items-center gap-2">
+                                                    <Briefcase size={12} className="text-indigo-500" /> Projected Default Income
+                                                </span>
+                                                <span className="font-bold text-gray-900 dark:text-white">{formatINR(summary.projectedAnnualIncome)}</span>
+                                            </div>
+                                            {(!summary.capitalGains || summary.capitalGains.total === 0) && (
+                                                <div className="flex justify-between items-center text-xs opacity-50">
+                                                    <span className="text-gray-600 dark:text-gray-300 font-medium flex items-center gap-2">
+                                                        <Activity size={12} className="text-indigo-500" /> Capital Gains
+                                                    </span>
+                                                    <span className="font-bold text-gray-900 dark:text-white">₹0</span>
+                                                </div>
+                                            )}
+                                            {(summary.capitalGains?.stcgEquity > 0 || summary.capitalGains?.ltcgEquity > 0) && (
+                                                <div className="flex justify-between items-center text-xs">
+                                                    <span className="text-gray-600 dark:text-gray-300 font-medium flex items-center gap-2">
+                                                        <Activity size={12} className="text-emerald-500" /> Capital Gains (Equity)
+                                                    </span>
+                                                    <span className="font-bold text-emerald-600 dark:text-emerald-400">
+                                                        +{formatINR(summary.capitalGains.stcgEquity + summary.capitalGains.ltcgEquity)}
+                                                    </span>
+                                                </div>
+                                            )}
+                                            {(summary.capitalGains?.stcgDebt > 0 || summary.capitalGains?.ltcgDebt > 0) && (
+                                                <div className="flex justify-between items-center text-xs">
+                                                    <span className="text-gray-600 dark:text-gray-300 font-medium flex items-center gap-2">
+                                                        <Activity size={12} className="text-orange-500" /> Capital Gains (Debt)
+                                                    </span>
+                                                    <span className="font-bold text-orange-600 dark:text-orange-400">
+                                                        +{formatINR(summary.capitalGains.stcgDebt + summary.capitalGains.ltcgDebt)}
+                                                    </span>
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
+
                                     <div className="flex items-center gap-2 mt-2">
                                         <div className="w-full bg-gray-100 dark:bg-gray-800 h-1.5 rounded-full overflow-hidden">
                                             <div
                                                 className="bg-indigo-500 h-full transition-all duration-1000"
-                                                style={{ width: `${Math.round(Math.min(100, (summary.realizedIncome / summary.projectedAnnualIncome) * 100))}%` }}
+                                                style={{ width: `${Math.round(Math.min(100, ((summary.realizedIncome + (summary.capitalGains?.total || 0)) / Math.max(1, summary.projectedAnnualIncome + (summary.capitalGains?.total || 0))) * 100))}%` }}
                                             />
                                         </div>
                                         <span className="text-[10px] font-bold text-indigo-500 whitespace-nowrap">
-                                            {Math.round((summary.realizedIncome / summary.projectedAnnualIncome) * 100)}% Realized
+                                            {Math.round(((summary.realizedIncome + (summary.capitalGains?.total || 0)) / Math.max(1, summary.projectedAnnualIncome + (summary.capitalGains?.total || 0))) * 100)}% Realized
                                         </span>
                                     </div>
                                 </div>

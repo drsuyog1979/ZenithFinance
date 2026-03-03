@@ -24,7 +24,12 @@ export default async function AnalyticsPage() {
         );
     }
 
-    const transactions = txRes.data || [];
+    const transactions = (txRes.data || []).map((t) => ({
+        ...t,
+        date: t.date?.toISOString() || new Date().toISOString(),
+        createdAt: t.createdAt?.toISOString(),
+        updatedAt: t.updatedAt?.toISOString(),
+    }));
 
     return (
         <div className="p-4 md:p-8 max-w-7xl mx-auto pb-24 md:pb-8">

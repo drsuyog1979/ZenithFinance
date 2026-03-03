@@ -9,7 +9,7 @@ datasource db {
 }
 
 model User {
-  id                       String                    @id
+  id                       String                    @id @default(uuid())
   email                    String                    @unique
   createdAt                DateTime                  @default(now())
   assets                   AssetLot[]
@@ -33,7 +33,7 @@ model Wallet {
   userId         String
   createdAt      DateTime      @default(now())
   transactions   Transaction[]
-  user           User          @relation(fields: [userId], references: [id])
+  user           User          @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
 }
@@ -51,8 +51,8 @@ model Transaction {
   userId      String
   createdAt   DateTime        @default(now())
   updatedAt   DateTime        @updatedAt
-  user        User            @relation(fields: [userId], references: [id])
-  wallet      Wallet          @relation(fields: [walletId], references: [id])
+  user        User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  wallet      Wallet          @relation(fields: [walletId], references: [id], onDelete: Cascade)
 
   @@unique([userId, date, amount, description])
   @@index([userId, date])
@@ -67,7 +67,7 @@ model Budget {
   limitAmount Int
   userId      String
   createdAt   DateTime @default(now())
-  user        User     @relation(fields: [userId], references: [id])
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([userId, category, monthYear])
   @@index([userId, monthYear])
@@ -84,7 +84,7 @@ model AssetLot {
   remainingUnits Float
   userId         String
   createdAt      DateTime    @default(now())
-  user           User        @relation(fields: [userId], references: [id])
+  user           User        @relation(fields: [userId], references: [id], onDelete: Cascade)
   sales          AssetSale[]
 
   @@index([userId, symbol])
@@ -105,8 +105,8 @@ model AssetSale {
   lotId           String
   userId          String
   createdAt       DateTime  @default(now())
-  lot             AssetLot  @relation(fields: [lotId], references: [id])
-  user            User      @relation(fields: [userId], references: [id])
+  lot             AssetLot  @relation(fields: [lotId], references: [id], onDelete: Cascade)
+  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId, sellDate])
   @@index([userId, gainType])
@@ -121,7 +121,7 @@ model Reminder {
   isPaid    Boolean      @default(false)
   userId    String
   createdAt DateTime     @default(now())
-  user      User         @relation(fields: [userId], references: [id])
+  user      User         @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId, dueDate])
   @@index([userId, isPaid])
@@ -137,7 +137,7 @@ model TaxProfile {
   deductions    Json
   userId        String       @unique
   updatedAt     DateTime     @updatedAt
-  user          User         @relation(fields: [userId], references: [id])
+  user          User         @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model CapitalGainsTransaction {
@@ -166,7 +166,7 @@ model CapitalGainsTransaction {
   taxSurcharge             Float?
   financialYear            String
   importedAt               DateTime @default(now())
-  user                     User     @relation(fields: [userId], references: [id])
+  user                     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId, financialYear])
 }
@@ -184,7 +184,7 @@ model CapitalGainsSummary {
   longTermGainWithIndex    Float
   longTermGainWithoutIndex Float
   importedAt               DateTime @default(now())
-  user                     User     @relation(fields: [userId], references: [id])
+  user                     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId, financialYear])
 }
