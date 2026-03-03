@@ -92,9 +92,8 @@ export async function getTaxSummary() {
 
         const realizedIncome = incomeAggr._sum?.amount || 0;
 
-        // Project annual income
-        const monthsPassed = Math.max(1, differenceInMonths(now, fyStart) + 1);
-        const projectedAnnualIncome = Math.round((realizedIncome / monthsPassed) * 12);
+        // Use actual realized income instead of projected
+        const projectedAnnualIncome = realizedIncome;
 
         // Get Capital Gains
         const fyString = `${fyStart.getFullYear()}-${fyEnd.getFullYear().toString().slice(-2)}`;
