@@ -6,7 +6,7 @@ import {
     ArrowRightLeft, AlertCircle, CheckCircle2, Loader2,
     Calendar, Tag, Hash, Wallet
 } from "lucide-react";
-import { getCapitalGainsSummary } from "@/app/actions/assets";
+import { getDashboardCapitalGains } from "@/app/actions/capital-gains";
 
 export function CapitalGainsDashboard() {
     const [summary, setSummary] = useState<any>(null);
@@ -19,7 +19,7 @@ export function CapitalGainsDashboard() {
     async function loadData() {
         setIsLoading(true);
         try {
-            const data = await getCapitalGainsSummary();
+            const data = await getDashboardCapitalGains();
             setSummary(data);
         } catch (e) {
             console.error("Failed to load capital gains data", e);
@@ -50,7 +50,7 @@ export function CapitalGainsDashboard() {
                         Realised Capital Gains
                     </h2>
                     <p className="text-xs text-gray-500 uppercase tracking-widest font-semibold flex items-center gap-2">
-                        Current Financial Year (FY 24-25)
+                        Financial Year ({summary?.financialYear || "N/A"})
                     </p>
                 </div>
             </div>

@@ -12,7 +12,6 @@ export const metadata: Metadata = {
   title: "Zenith Finance",
   description: "Premium personal finance application",
   manifest: "/manifest.json",
-  themeColor: "#1a3c5e",
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",

@@ -9,18 +9,18 @@ datasource db {
 }
 
 model User {
-  id           String        @id
-  email        String        @unique
-  createdAt    DateTime      @default(now())
-  assets       AssetLot[]
-  sales        AssetSale[]
-  budgets      Budget[]
-  reminders    Reminder[]
-  taxProfile   TaxProfile?
-  transactions Transaction[]
-  wallets      Wallet[]
+  id                       String                    @id
+  email                    String                    @unique
+  createdAt                DateTime                  @default(now())
+  assets                   AssetLot[]
+  sales                    AssetSale[]
+  budgets                  Budget[]
+  capitalGainsSummaries    CapitalGainsSummary[]
   capitalGainsTransactions CapitalGainsTransaction[]
-  capitalGainsSummaries   CapitalGainsSummary[]
+  reminders                Reminder[]
+  taxProfile               TaxProfile?
+  transactions             Transaction[]
+  wallets                  Wallet[]
 }
 
 model Wallet {
@@ -140,6 +140,55 @@ model TaxProfile {
   user          User         @relation(fields: [userId], references: [id])
 }
 
+model CapitalGainsTransaction {
+  id                       String   @id @default(cuid())
+  userId                   String
+  amcName                  String
+  folioNo                  String
+  schemeName               String
+  isin                     String?
+  assetClass               String
+  transactionType          String
+  transactionDate          DateTime
+  amount                   Float
+  unitsPurchased           Float
+  unitsRedeemed            Float
+  unitCost                 Float
+  indexedCost              Float?
+  grandfatheredUnits       Float?
+  grandfatheredNav         Float?
+  grandfatheredValue       Float?
+  shortTermGain            Float?
+  longTermGainWithIndex    Float?
+  longTermGainWithoutIndex Float?
+  taxPercentage            Float?
+  taxDeductible            Float?
+  taxSurcharge             Float?
+  financialYear            String
+  importedAt               DateTime @default(now())
+  user                     User     @relation(fields: [userId], references: [id])
+
+  @@index([userId, financialYear])
+}
+
+model CapitalGainsSummary {
+  id                       String   @id @default(cuid())
+  userId                   String
+  financialYear            String
+  assetClass               String
+  period                   String
+  fullValueConsideration   Float
+  costOfAcquisition        Float
+  shortTermGainLoss        Float
+  fairMarketValue          Float?
+  longTermGainWithIndex    Float
+  longTermGainWithoutIndex Float
+  importedAt               DateTime @default(now())
+  user                     User     @relation(fields: [userId], references: [id])
+
+  @@index([userId, financialYear])
+}
+
 enum TransactionType {
   INCOME
   EXPENSE
@@ -194,53 +243,4 @@ enum TaxpayerType {
   INDIVIDUAL
   SENIOR_CITIZEN
   SUPER_SENIOR_CITIZEN
-}
-
-model CapitalGainsTransaction {
-  id                         String   @id @default(cuid())
-  userId                     String
-  amcName                    String
-  folioNo                    String
-  schemeName                 String
-  isin                       String?
-  assetClass                 String
-  transactionType            String
-  transactionDate            DateTime
-  amount                     Float
-  unitsPurchased             Float
-  unitsRedeemed              Float
-  unitCost                   Float
-  indexedCost                Float?
-  grandfatheredUnits         Float?
-  grandfatheredNav           Float?
-  grandfatheredValue         Float?
-  shortTermGain              Float?
-  longTermGainWithIndex      Float?
-  longTermGainWithoutIndex   Float?
-  taxPercentage              Float?
-  taxDeductible              Float?
-  taxSurcharge               Float?
-  financialYear              String
-  importedAt                 DateTime @default(now())
-  user                       User     @relation(fields: [userId], references: [id])
-
-  @@index([userId, financialYear])
-}
-
-model CapitalGainsSummary {
-  id                        String   @id @default(cuid())
-  userId                    String
-  financialYear             String
-  assetClass                String
-  period                    String
-  fullValueConsideration    Float
-  costOfAcquisition         Float
-  shortTermGainLoss         Float
-  fairMarketValue           Float?
-  longTermGainWithIndex     Float
-  longTermGainWithoutIndex  Float
-  importedAt                DateTime @default(now())
-  user                      User     @relation(fields: [userId], references: [id])
-
-  @@index([userId, financialYear])
 }

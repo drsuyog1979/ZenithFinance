@@ -248,6 +248,67 @@ export async function getCapitalGainsSummary(financialYear: string) {
     return { transactions, summaries };
 }
 
+export async function getDashboardCapitalGains(financialYear?: string) {
+    const userId = await getUserId();
+
+    // Determine which FY to query
+    let fyToQuery = financialYear;
+    if (!fyToQuery) {
+        // Find latest available FY if none specified
+        const years = await getFinancialYears();
+        if (years.length > 0) {
+            fyToQuery = years[0];
+        }
+    }
+
+    if (!fyToQuery) {
+        return {
+            financialYear: "N/A",
+            summary: { stcg: 0, ltcg: 0, loss: 0, net: 0 },
+            assetWise: []
+        };
+    }
+
+    const { transactions } = await getCapitalGainsSummary(fyToQuery);
+
+    let stcg = 0;
+    let ltcg = 0;
+    let loss = 0;
+
+    const assetWiseMap: Record<string, { symbol: string, type: string, gain: number }> = {};
+
+    transactions.forEach(t => {
+        const stGain = t.shortTermGain || 0;
+        const ltGain = t.longTermGainWithoutIndex || 0;
+
+        const netGain = stGain + ltGain;
+
+        if (stGain > 0) stcg += stGain;
+        else if (stGain < 0) loss += Math.abs(stGain);
+
+        if (ltGain > 0) ltcg += ltGain;
+        else if (ltGain < 0) loss += Math.abs(ltGain);
+
+        // Group by scheme and asset class
+        const key = `${t.schemeName} (${t.assetClass})`;
+        if (!assetWiseMap[key]) {
+            assetWiseMap[key] = { symbol: t.schemeName, type: t.assetClass, gain: 0 };
+        }
+        assetWiseMap[key].gain += netGain;
+    });
+
+    return {
+        financialYear: fyToQuery,
+        summary: {
+            stcg: stcg,
+            ltcg: ltcg,
+            loss: loss,
+            net: stcg + ltcg - loss
+        },
+        assetWise: Object.values(assetWiseMap).sort((a, b) => b.gain - a.gain)
+    };
+}
+
 export async function getFinancialYears() {
     const userId = await getUserId();
     const years = await prisma.capitalGainsTransaction.findMany({
