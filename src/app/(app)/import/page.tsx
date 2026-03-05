@@ -10,49 +10,49 @@ export default function ImportPage() {
     const [importType, setImportType] = useState<"csv" | "pdf" | "cg">("pdf");
 
     return (
-        <div className="p-4 md:p-8 max-w-2xl mx-auto pb-24 md:pb-8 landscape:pb-28 min-h-[calc(100dvh-4rem)]">
-            <div className="mb-8">
-                <div className="flex items-center gap-3 mb-2">
-                    <div className="w-10 h-10 rounded-xl bg-purple-100 dark:bg-purple-900/30 text-purple-600 flex items-center justify-center">
-                        <Upload size={20} />
+        <div className="p-4 landscape:p-2 landscape:pt-4 md:p-8 max-w-2xl mx-auto pb-24 md:pb-8 landscape:pb-20 min-h-[calc(100dvh-4rem)] touch-pan-y">
+            <div className="mb-8 landscape:mb-4">
+                <div className="flex items-center gap-3 mb-2 landscape:mb-1">
+                    <div className="w-10 h-10 landscape:w-8 landscape:h-8 rounded-xl bg-purple-100 dark:bg-purple-900/30 text-purple-600 flex items-center justify-center">
+                        <Upload size={20} className="landscape:w-4 landscape:h-4" />
                     </div>
-                    <h1 className="text-3xl font-bold tracking-tight text-[var(--color-brand-navy)] dark:text-white">
+                    <h1 className="text-3xl landscape:text-xl font-bold tracking-tight text-[var(--color-brand-navy)] dark:text-white">
                         Import Data
                     </h1>
                 </div>
-                <p className="text-gray-500 ml-13 font-medium">Migrate your financial history into Zenith Finance.</p>
+                <p className="text-gray-500 ml-13 landscape:ml-11 font-medium landscape:text-xs">Migrate your financial history into Zenith Finance.</p>
             </div>
 
-            <div className="bg-white dark:bg-gray-900 p-1.5 rounded-2xl flex gap-1 mb-8 shadow-sm border border-gray-100 dark:border-gray-800">
+            <div className="bg-white dark:bg-gray-900 p-1.5 landscape:p-1 rounded-2xl flex gap-1 mb-8 landscape:mb-4 shadow-sm border border-gray-100 dark:border-gray-800">
                 <button
                     onClick={() => setImportType("pdf")}
-                    className={`flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-xl text-xs sm:text-sm font-semibold transition-all ${importType === "pdf"
+                    className={`flex-1 flex items-center justify-center gap-2 py-3 landscape:py-2 px-4 landscape:px-2 rounded-xl text-xs sm:text-sm font-semibold transition-all ${importType === "pdf"
                         ? "bg-indigo-50 dark:bg-indigo-900/20 text-indigo-700 dark:text-indigo-400 shadow-sm"
                         : "text-gray-500 hover:bg-gray-50 dark:hover:bg-gray-800"
                         }`}
                 >
-                    <FileText size={18} className="hidden sm:block" />
+                    <FileText size={18} className="hidden sm:block landscape:hidden" />
                     Bank Statements
                 </button>
                 <button
                     onClick={() => setImportType("csv")}
-                    className={`flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-xl text-xs sm:text-sm font-semibold transition-all ${importType === "csv"
+                    className={`flex-1 flex items-center justify-center gap-2 py-3 landscape:py-2 px-4 landscape:px-2 rounded-xl text-xs sm:text-sm font-semibold transition-all ${importType === "csv"
                         ? "bg-purple-50 dark:bg-purple-900/20 text-purple-700 dark:text-purple-400 shadow-sm"
                         : "text-gray-500 hover:bg-gray-50 dark:hover:bg-gray-800"
                         }`}
                 >
-                    <ArrowRightLeft size={18} className="hidden sm:block" />
+                    <ArrowRightLeft size={18} className="hidden sm:block landscape:hidden" />
                     Expenses
                 </button>
                 <button
                     onClick={() => setImportType("cg")}
-                    className={`flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-xl text-xs sm:text-sm font-semibold transition-all ${importType === "cg"
+                    className={`flex-1 flex items-center justify-center gap-2 py-3 landscape:py-2 px-4 landscape:px-2 rounded-xl text-xs sm:text-sm font-semibold transition-all ${importType === "cg"
                         ? "bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-400 shadow-sm"
                         : "text-gray-500 hover:bg-gray-50 dark:hover:bg-gray-800"
                         }`}
                 >
-                    <Coins size={18} className="hidden sm:block" />
-                    Capital Gains Statements (CAMS XLS)
+                    <Coins size={18} className="hidden sm:block landscape:hidden" />
+                    Capital Gains
                 </button>
             </div>
 

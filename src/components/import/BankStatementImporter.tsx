@@ -142,38 +142,38 @@ export function BankStatementImporter() {
     // ── STEP: Setup ──────────────────────────────────────────────────────────
     if (step === "setup") {
         return (
-            <div className="max-w-xl mx-auto space-y-6">
-                <div className="bg-white dark:bg-gray-900 rounded-3xl p-6 shadow-sm border border-gray-100 dark:border-gray-800">
-                    <div className="flex items-center gap-3 mb-6">
-                        <div className="w-12 h-12 rounded-2xl bg-indigo-100 dark:bg-indigo-900/30 text-indigo-600 flex items-center justify-center">
-                            <FileText size={24} />
+            <div className="max-w-xl mx-auto space-y-6 landscape:space-y-3">
+                <div className="bg-white dark:bg-gray-900 rounded-3xl p-6 landscape:p-4 shadow-sm border border-gray-100 dark:border-gray-800">
+                    <div className="flex items-center gap-3 mb-6 landscape:mb-3">
+                        <div className="w-12 h-12 landscape:w-9 landscape:h-9 rounded-2xl bg-indigo-100 dark:bg-indigo-900/30 text-indigo-600 flex items-center justify-center">
+                            <FileText size={24} className="landscape:w-5 landscape:h-5" />
                         </div>
                         <div>
-                            <h2 className="text-lg font-bold text-gray-900 dark:text-gray-100">Import Bank Statement</h2>
-                            <p className="text-sm text-gray-500">Auto-parse your PDF, CSV or Excel transactions</p>
+                            <h2 className="text-lg landscape:text-base font-bold text-gray-900 dark:text-gray-100">Import Bank Statement</h2>
+                            <p className="text-sm landscape:text-xs text-gray-500">Auto-parse your transactions</p>
                         </div>
                     </div>
 
-                    <div className="space-y-4">
-                        <p className="text-sm text-gray-600 dark:text-gray-400">Select your bank to ensure the statement is parsed correctly into the corresponding wallet.</p>
+                    <div className="space-y-4 landscape:space-y-2">
+                        <p className="text-sm landscape:text-xs text-gray-600 dark:text-gray-400">Select your bank to ensure correct parsing.</p>
 
-                        <div className="grid grid-cols-2 gap-4">
+                        <div className="grid grid-cols-2 gap-4 landscape:gap-2">
                             <button
                                 onClick={() => setBank("axis")}
-                                className={`flex flex-col items-center justify-center gap-2 p-6 rounded-2xl border-2 transition-all ${bank === "axis" ? "border-indigo-500 bg-indigo-50 dark:bg-indigo-900/20 text-indigo-700 dark:text-indigo-300" : "border-gray-200 dark:border-gray-700 text-gray-500 hover:border-indigo-200"}`}
+                                className={`flex flex-col items-center justify-center gap-2 p-6 landscape:p-3 rounded-2xl border-2 transition-all ${bank === "axis" ? "border-indigo-500 bg-indigo-50 dark:bg-indigo-900/20 text-indigo-700 dark:text-indigo-300" : "border-gray-200 dark:border-gray-700 text-gray-500 hover:border-indigo-200"}`}
                             >
-                                <Wallet size={32} />
-                                <span className="font-semibold">Axis Bank</span>
-                                <span className="text-xs opacity-75">("axissavings" wallet)</span>
+                                <Wallet size={32} className="landscape:w-6 landscape:h-6" />
+                                <span className="font-semibold landscape:text-sm">Axis Bank</span>
+                                <span className="text-xs landscape:text-[10px] opacity-75">("axissavings")</span>
                             </button>
 
                             <button
                                 onClick={() => setBank("bob")}
-                                className={`flex flex-col items-center justify-center gap-2 p-6 rounded-2xl border-2 transition-all ${bank === "bob" ? "border-orange-500 bg-orange-50 dark:bg-orange-900/20 text-orange-700 dark:text-orange-300" : "border-gray-200 dark:border-gray-700 text-gray-500 hover:border-orange-200"}`}
+                                className={`flex flex-col items-center justify-center gap-2 p-6 landscape:p-3 rounded-2xl border-2 transition-all ${bank === "bob" ? "border-orange-500 bg-orange-50 dark:bg-orange-900/20 text-orange-700 dark:text-orange-300" : "border-gray-200 dark:border-gray-700 text-gray-500 hover:border-orange-200"}`}
                             >
-                                <Wallet size={32} />
-                                <span className="font-semibold">Bank of Baroda</span>
-                                <span className="text-xs opacity-75">("bob" wallet)</span>
+                                <Wallet size={32} className="landscape:w-6 landscape:h-6" />
+                                <span className="font-semibold landscape:text-sm">Bank of Baroda</span>
+                                <span className="text-xs landscape:text-[10px] opacity-75">("bob")</span>
                             </button>
                         </div>
                     </div>
@@ -188,7 +188,7 @@ export function BankStatementImporter() {
 
                 <button
                     onClick={() => setStep("upload")}
-                    className="w-full flex items-center justify-center gap-2 bg-[var(--color-brand-navy)] hover:bg-[var(--color-brand-navy-light)] text-white py-4 rounded-2xl font-semibold text-lg transition-colors shadow-md"
+                    className="w-full flex items-center justify-center gap-2 bg-[var(--color-brand-navy)] hover:bg-[var(--color-brand-navy-light)] text-white py-4 landscape:py-3 rounded-2xl font-semibold text-lg landscape:text-base transition-colors shadow-md"
                 >
                     Continue
                     <ChevronRight size={20} />
@@ -208,7 +208,7 @@ export function BankStatementImporter() {
                     <ArrowLeft size={16} /> Back to bank selection
                 </button>
 
-                <div className="bg-white dark:bg-gray-900 rounded-3xl p-8 shadow-sm border border-gray-100 dark:border-gray-800">
+                <div className="bg-white dark:bg-gray-900 rounded-3xl p-8 landscape:p-4 shadow-sm border border-gray-100 dark:border-gray-800">
                     <input
                         ref={fileInputRef}
                         type="file"
@@ -223,7 +223,7 @@ export function BankStatementImporter() {
                         onDragOver={handleDragOver}
                         onDragLeave={handleDragLeave}
                         onDrop={handleDrop}
-                        className={`flex flex-col items-center justify-center gap-4 py-16 rounded-2xl border-2 border-dashed transition-all cursor-pointer ${isLoading
+                        className={`flex flex-col items-center justify-center gap-4 landscape:gap-2 py-16 landscape:py-8 rounded-2xl border-2 border-dashed transition-all cursor-pointer ${isLoading
                             ? "border-blue-300 bg-blue-50 dark:border-blue-700 dark:bg-blue-900/20"
                             : isDragging
                                 ? "border-indigo-500 bg-indigo-50 dark:border-indigo-500/30 dark:bg-indigo-900/40"
@@ -232,17 +232,17 @@ export function BankStatementImporter() {
                     >
                         {isLoading ? (
                             <>
-                                <Loader2 size={48} className="text-blue-500 animate-spin" />
-                                <p className="text-blue-600 dark:text-blue-400 font-medium">Extracting transactions…</p>
+                                <Loader2 size={48} className="text-blue-500 animate-spin landscape:w-8 landscape:h-8" />
+                                <p className="text-blue-600 dark:text-blue-400 font-medium landscape:text-sm text-center">Extracting transactions…</p>
                             </>
                         ) : (
                             <>
-                                <div className="w-16 h-16 rounded-2xl bg-indigo-100 dark:bg-indigo-900/30 text-indigo-600 flex items-center justify-center">
-                                    <FileCheck size={32} />
+                                <div className="w-16 h-16 landscape:w-10 landscape:h-10 rounded-2xl bg-indigo-100 dark:bg-indigo-900/30 text-indigo-600 flex items-center justify-center">
+                                    <FileCheck size={32} className="landscape:w-6 landscape:h-6" />
                                 </div>
                                 <div className="text-center">
-                                    <p className="font-semibold text-gray-900 dark:text-gray-100">Tap to select {bank === "axis" ? "Axis Bank" : "Bank of Baroda"} Statement</p>
-                                    <p className="text-sm text-gray-500 mt-1">PDF, CSV or Excel format supported</p>
+                                    <p className="font-semibold text-gray-900 dark:text-gray-100 landscape:text-sm">Tap to select {bank === "axis" ? "Axis" : "BoB"} Statement</p>
+                                    <p className="text-sm text-gray-500 mt-1 landscape:text-xs">PDF, CSV or Excel supported</p>
                                 </div>
                             </>
                         )}
@@ -289,13 +289,13 @@ export function BankStatementImporter() {
                 </button>
 
                 {/* Summary cards */}
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-2 gap-4 landscape:gap-2">
                     {[
-                        { icon: Hash, label: "Transactions", value: parseResult.rows.length.toString(), color: "blue" },
-                        { icon: Wallet, label: "Target Wallet", value: parseResult.walletNames[0], color: "purple" },
+                        { icon: Hash, label: "TXNs", value: parseResult.rows.length.toString(), color: "blue" },
+                        { icon: Wallet, label: "Wallet", value: parseResult.walletNames[0], color: "purple" },
                         { icon: Tag, label: "Categories", value: parseResult.categories.length.toString(), color: "orange" },
                         {
-                            icon: Calendar, label: "Date Range", color: "green",
+                            icon: Calendar, label: "Range", color: "green",
                             value: parseResult.dateRange ? `${parseResult.dateRange.from}` : "–",
                             sub: parseResult.dateRange?.to
                         },
@@ -308,28 +308,28 @@ export function BankStatementImporter() {
                             green: "bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600",
                         };
                         return (
-                            <div key={card.label} className="bg-white dark:bg-gray-900 rounded-2xl p-4 shadow-sm border border-gray-100 dark:border-gray-800">
-                                <div className={`w-9 h-9 rounded-xl flex items-center justify-center mb-2 ${colorMap[card.color]}`}>
-                                    <Icon size={18} />
+                            <div key={card.label} className="bg-white dark:bg-gray-900 rounded-2xl p-4 landscape:p-2 shadow-sm border border-gray-100 dark:border-gray-800">
+                                <div className={`w-9 h-9 landscape:w-7 landscape:h-7 rounded-xl flex items-center justify-center mb-2 landscape:mb-1 ${colorMap[card.color]}`}>
+                                    <Icon size={18} className="landscape:w-4 landscape:h-4" />
                                 </div>
-                                <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">{card.value}</p>
-                                {card.sub && <p className="text-xs text-gray-500">to {card.sub}</p>}
-                                <p className="text-xs text-gray-500 mt-0.5">{card.label}</p>
+                                <p className="text-2xl landscape:text-lg font-bold text-gray-900 dark:text-gray-100">{card.value}</p>
+                                {card.sub && <p className="text-xs landscape:text-[10px] text-gray-500">to {card.sub}</p>}
+                                <p className="text-xs landscape:text-[10px] text-gray-500 mt-0.5">{card.label}</p>
                             </div>
                         );
                     })}
                 </div>
 
                 {/* Sample rows */}
-                <div className="bg-white dark:bg-gray-900 rounded-3xl p-6 shadow-sm border border-gray-100 dark:border-gray-800">
-                    <h3 className="font-semibold text-gray-900 dark:text-gray-100 mb-3">Sample transactions (first 5)</h3>
-                    <div className="space-y-3">
+                <div className="bg-white dark:bg-gray-900 rounded-3xl p-6 landscape:p-4 shadow-sm border border-gray-100 dark:border-gray-800">
+                    <h3 className="font-semibold text-gray-900 dark:text-gray-100 mb-3 landscape:mb-2 landscape:text-sm">Sample transactions (first 5)</h3>
+                    <div className="space-y-3 landscape:space-y-1">
                         {parseResult.rows.slice(0, 5).map((row, i) => (
-                            <div key={i} className="flex items-center justify-between text-sm">
+                            <div key={i} className="flex items-center justify-between text-sm landscape:text-xs">
                                 <div className="flex flex-col">
                                     <span className="font-medium text-gray-900 dark:text-gray-100">{row.category}</span>
-                                    <span className="text-xs text-gray-500 truncate max-w-[200px]" title={row.note}>{row.note}</span>
-                                    <span className="text-[10px] text-gray-400">{row.date.toLocaleDateString("en-IN")}</span>
+                                    <span className="text-xs landscape:text-[10px] text-gray-500 truncate max-w-[200px]" title={row.note}>{row.note}</span>
+                                    <span className="text-[10px] landscape:text-[8px] text-gray-400">{row.date.toLocaleDateString("en-IN")}</span>
                                 </div>
                                 <span className={`font-semibold shrink-0 ${row.type === "INCOME" ? "text-emerald-600" : "text-red-500"}`}>
                                     {row.type === "INCOME" ? "+" : "-"}₹{(row.amount / 100).toLocaleString("en-IN")}
@@ -349,12 +349,12 @@ export function BankStatementImporter() {
                 <button
                     onClick={handleImport}
                     disabled={isLoading}
-                    className="w-full flex items-center justify-center gap-2 bg-[var(--color-brand-navy)] hover:bg-[var(--color-brand-navy-light)] disabled:opacity-60 text-white py-4 rounded-2xl font-semibold text-lg transition-colors shadow-md"
+                    className="w-full flex items-center justify-center gap-2 bg-[var(--color-brand-navy)] hover:bg-[var(--color-brand-navy-light)] disabled:opacity-60 text-white py-4 landscape:py-3 rounded-2xl font-semibold text-lg landscape:text-base transition-colors shadow-md"
                 >
                     {isLoading ? (
                         <><Loader2 size={20} className="animate-spin" /> Importing…</>
                     ) : (
-                        <><Upload size={20} /> Import to {parseResult.walletNames[0]}</>
+                        <><Upload size={20} className="landscape:w-5 landscape:h-5" /> Import to {parseResult.walletNames[0]}</>
                     )}
                 </button>
                 <p className="text-center text-xs text-gray-400">Duplicates are automatically skipped. You can undo this import after it completes.</p>

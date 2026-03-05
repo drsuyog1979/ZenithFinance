@@ -4,7 +4,7 @@
 import { useState, useRef } from "react";
 import {
     Upload, FileText, CheckCircle2, AlertCircle, ChevronRight,
-    Loader2, ArrowLeft, Coins, BarChart3, PieChart, Info
+    Loader2, ArrowLeft, Coins, BarChart3, PieChart, Info, Hash, TrendingUp
 } from "lucide-react";
 import { parseCapitalGainsXLS, saveCapitalGainsData } from "@/app/actions/capital-gains";
 
@@ -86,15 +86,15 @@ export function CapitalGainsImporter() {
 
     if (step === "upload") {
         return (
-            <div className="max-w-xl mx-auto space-y-6">
-                <div className="bg-white dark:bg-gray-900 rounded-3xl p-8 shadow-sm border border-gray-100 dark:border-gray-800">
-                    <div className="flex items-center gap-3 mb-6">
-                        <div className="w-12 h-12 rounded-2xl bg-amber-100 dark:bg-amber-900/30 text-amber-600 flex items-center justify-center">
-                            <Coins size={24} />
+            <div className="max-w-xl mx-auto space-y-6 landscape:space-y-3">
+                <div className="bg-white dark:bg-gray-900 rounded-3xl p-8 landscape:p-4 shadow-sm border border-gray-100 dark:border-gray-800">
+                    <div className="flex items-center gap-3 mb-6 landscape:mb-3">
+                        <div className="w-12 h-12 landscape:w-9 landscape:h-9 rounded-2xl bg-amber-100 dark:bg-amber-900/30 text-amber-600 flex items-center justify-center">
+                            <Coins size={24} className="landscape:w-5 landscape:h-5" />
                         </div>
                         <div>
-                            <h2 className="text-lg font-bold text-gray-900 dark:text-gray-100">CAMS Capital Gains Import</h2>
-                            <p className="text-sm text-gray-500">Import your Mutual Fund capital gains statement</p>
+                            <h2 className="text-lg landscape:text-base font-bold text-gray-900 dark:text-gray-100">CAMS Capital Gains</h2>
+                            <p className="text-sm landscape:text-xs text-gray-500">Import MF gains statement</p>
                         </div>
                     </div>
 
@@ -109,40 +109,40 @@ export function CapitalGainsImporter() {
 
                     <label
                         htmlFor="cg-file-input"
-                        className={`flex flex-col items-center justify-center gap-4 py-16 rounded-2xl border-2 border-dashed transition-all cursor-pointer ${isLoading
+                        className={`flex flex-col items-center justify-center gap-4 landscape:gap-2 py-16 landscape:py-8 rounded-2xl border-2 border-dashed transition-all cursor-pointer ${isLoading
                             ? "border-amber-300 bg-amber-50 dark:border-amber-700 dark:bg-amber-900/20"
                             : "border-gray-200 dark:border-gray-700 hover:border-amber-500 hover:bg-gray-50 dark:hover:bg-gray-800/50"
                             }`}
                     >
                         {isLoading ? (
                             <>
-                                <Loader2 size={48} className="text-amber-500 animate-spin" />
-                                <p className="text-amber-600 dark:text-amber-400 font-medium">Parsing statement...</p>
+                                <Loader2 size={48} className="text-amber-500 animate-spin landscape:w-8 landscape:h-8" />
+                                <p className="text-amber-600 dark:text-amber-400 font-medium landscape:text-sm">Parsing statement...</p>
                             </>
                         ) : (
                             <>
-                                <div className="w-16 h-16 rounded-2xl bg-amber-100 dark:bg-amber-900/30 text-amber-600 flex items-center justify-center">
-                                    <FileText size={32} />
+                                <div className="w-16 h-16 landscape:w-10 landscape:h-10 rounded-2xl bg-amber-100 dark:bg-amber-900/30 text-amber-600 flex items-center justify-center">
+                                    <FileText size={32} className="landscape:w-6 landscape:h-6" />
                                 </div>
                                 <div className="text-center px-4">
-                                    <p className="font-semibold text-gray-900 dark:text-gray-100">Select CAMS XLS File</p>
-                                    <p className="text-sm text-gray-500 mt-1">Only .xls and .xlsx files are supported</p>
+                                    <p className="font-semibold text-gray-900 dark:text-gray-100 landscape:text-sm">Select CAMS XLS File</p>
+                                    <p className="text-sm text-gray-500 mt-1 landscape:text-xs">Only .xls and .xlsx supported</p>
                                 </div>
                             </>
                         )}
                     </label>
 
                     {error && (
-                        <div className="mt-4 p-4 bg-red-50 dark:bg-red-900/20 rounded-xl flex items-start gap-3 text-red-600 dark:text-red-400 text-sm">
-                            <AlertCircle size={18} className="flex-shrink-0 mt-0.5" />
+                        <div className="mt-4 landscape:mt-2 p-4 landscape:p-2 bg-red-50 dark:bg-red-900/20 rounded-xl flex items-start gap-3 text-red-600 dark:text-red-400 text-sm landscape:text-xs">
+                            <AlertCircle size={18} />
                             <p>{error}</p>
                         </div>
                     )}
 
-                    <div className="mt-6 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-2xl text-sm text-blue-700 dark:text-blue-300 flex items-start gap-2">
+                    <div className="mt-6 landscape:mt-3 p-4 landscape:p-2 bg-blue-50 dark:bg-blue-900/20 rounded-2xl text-sm landscape:text-xs text-blue-700 dark:text-blue-300 flex items-start gap-2">
                         <Info size={16} className="flex-shrink-0 mt-0.5" />
                         <div>
-                            <strong>Note:</strong> Download the "Consolidated Realised Gains Statement" from CAMS Online in Excel format for the required Financial Year.
+                            <strong>Note:</strong> Consolidated Realised Gains Statement from CAMS Online.
                         </div>
                     </div>
                 </div>
@@ -160,61 +160,64 @@ export function CapitalGainsImporter() {
                     <ArrowLeft size={16} /> Choose different file
                 </button>
 
-                <div className="bg-white dark:bg-gray-900 rounded-3xl p-6 shadow-sm border border-gray-100 dark:border-gray-800">
-                    <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-4">Import Preview</h2>
+                <div className="bg-white dark:bg-gray-900 rounded-3xl p-6 landscape:p-4 shadow-sm border border-gray-100 dark:border-gray-800">
+                    <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-4 landscape:mb-2 landscape:text-lg">Import Preview</h2>
 
-                    <div className="grid grid-cols-2 gap-4 mb-6">
-                        <div className="p-4 bg-gray-50 dark:bg-gray-800 rounded-2xl">
-                            <p className="text-xs text-gray-500 mb-1">Financial Year</p>
-                            <p className="text-lg font-bold text-[var(--color-brand-navy)] dark:text-white">{summary.financialYear}</p>
+                    <div className="grid grid-cols-2 gap-4 mb-6 landscape:mb-3">
+                        <div className="p-4 landscape:p-2 bg-gray-50 dark:bg-gray-800 rounded-2xl">
+                            <p className="text-xs landscape:text-[10px] text-gray-500 mb-1">Financial Year</p>
+                            <p className="text-lg landscape:text-base font-bold text-[var(--color-brand-navy)] dark:text-white">{summary.financialYear}</p>
                         </div>
-                        <div className="p-4 bg-gray-50 dark:bg-gray-800 rounded-2xl">
-                            <p className="text-xs text-gray-500 mb-1">Total Funds</p>
-                            <p className="text-lg font-bold text-[var(--color-brand-navy)] dark:text-white">{summary.totalFunds}</p>
+                        <div className="p-4 landscape:p-2 bg-gray-50 dark:bg-gray-800 rounded-2xl">
+                            <p className="text-xs landscape:text-[10px] text-gray-500 mb-1">Total Funds</p>
+                            <p className="text-lg landscape:text-base font-bold text-[var(--color-brand-navy)] dark:text-white">{summary.totalFunds}</p>
                         </div>
                     </div>
 
-                    <div className="space-y-4">
-                        <div className="flex items-center justify-between p-4 border border-gray-100 dark:border-gray-800 rounded-2xl">
-                            <div className="flex items-center gap-3">
-                                <div className="w-10 h-10 rounded-xl bg-green-100 dark:bg-green-900/30 text-green-600 flex items-center justify-center">
-                                    <BarChart3 size={20} />
+                    <h3 className="font-semibold text-gray-900 dark:text-gray-100 mb-4 landscape:mb-2 landscape:text-sm">Sample trades (first 3)</h3>
+                    <div className="space-y-4 landscape:space-y-1">
+                        {summary.rows.slice(0, 3).map((row: any, i: number) => (
+                            <div key={i} className="flex flex-col gap-1 pb-4 landscape:pb-1 border-b border-gray-100 dark:border-gray-800 last:border-0 last:pb-0">
+                                <div className="flex justify-between items-start">
+                                    <span className="font-medium text-gray-900 dark:text-gray-100 text-sm landscape:text-xs">
+                                        {row.schemeName.length > 30 ? row.schemeName.substring(0, 30) + "..." : row.schemeName}
+                                    </span>
+                                    <span className={`text-xs landscape:text-[10px] px-2 py-0.5 rounded-full ${row.type === "STCG" ? "bg-emerald-100 text-emerald-700" : "bg-green-100 text-green-700"}`}>
+                                        {row.type}
+                                    </span>
                                 </div>
-                                <div>
-                                    <p className="font-semibold text-gray-900 dark:text-gray-100">Short Term Gain/Loss</p>
-                                    <p className="text-xs text-gray-500">Aggregate STCG</p>
+                                <div className="flex justify-between text-xs landscape:text-[10px] text-gray-500">
+                                    <span>Gained: ₹{(row.gain / 100).toLocaleString("en-IN")}</span>
+                                    <span>Date: {new Date(row.date).toLocaleDateString("en-IN")}</span>
                                 </div>
                             </div>
-                            <span className={`font-bold ${summary.shortTermGain >= 0 ? "text-emerald-600" : "text-red-500"}`}>
-                                ₹{summary.shortTermGain.toLocaleString("en-IN", { minimumFractionDigits: 2 })}
-                            </span>
-                        </div>
+                        ))}
+                    </div>
 
-                        <div className="flex items-center justify-between p-4 border border-gray-100 dark:border-gray-800 rounded-2xl">
-                            <div className="flex items-center gap-3">
-                                <div className="w-10 h-10 rounded-xl bg-blue-100 dark:bg-blue-900/30 text-blue-600 flex items-center justify-center">
-                                    <PieChart size={20} />
+                    <div className="grid grid-cols-2 gap-4 landscape:gap-2 mt-6 landscape:mt-3">
+                        {[
+                            { icon: Hash, label: "TXNs", value: summary.rows.length.toString(), color: "blue" },
+                            { icon: TrendingUp, label: "STCG", value: `₹${(summary.shortTermGain / 100).toLocaleString("en-IN")}`, color: "emerald" },
+                            { icon: TrendingUp, label: "LTCG", value: `₹${(summary.longTermGain / 100).toLocaleString("en-IN")}`, color: "green" },
+                            { icon: Coins, label: "Total Gain", value: `₹${((summary.shortTermGain + summary.longTermGain) / 100).toLocaleString("en-IN")}`, color: "amber" },
+                        ].map(card => {
+                            const Icon = card.icon;
+                            const colorMap: Record<string, string> = {
+                                blue: "bg-blue-50 dark:bg-blue-900/20 text-blue-600",
+                                emerald: "bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600",
+                                green: "bg-green-50 dark:bg-green-900/20 text-green-600",
+                                amber: "bg-amber-50 dark:bg-amber-900/20 text-amber-600",
+                            };
+                            return (
+                                <div key={card.label} className="bg-white dark:bg-gray-900 rounded-2xl p-4 landscape:p-2 shadow-sm border border-gray-100 dark:border-gray-800">
+                                    <div className={`w-9 h-9 landscape:w-7 landscape:h-7 rounded-xl flex items-center justify-center mb-2 landscape:mb-1 ${colorMap[card.color]}`}>
+                                        <Icon size={18} className="landscape:w-4 landscape:h-4" />
+                                    </div>
+                                    <p className="text-xl landscape:text-lg font-bold text-gray-900 dark:text-gray-100">{card.value}</p>
+                                    <p className="text-xs landscape:text-[10px] text-gray-500 mt-0.5">{card.label}</p>
                                 </div>
-                                <div>
-                                    <p className="font-semibold text-gray-900 dark:text-gray-100">Long Term Gain/Loss</p>
-                                    <p className="text-xs text-gray-500">Aggregate LTCG</p>
-                                </div>
-                            </div>
-                            <span className={`font-bold ${summary.longTermGain >= 0 ? "text-emerald-600" : "text-red-500"}`}>
-                                ₹{summary.longTermGain.toLocaleString("en-IN", { minimumFractionDigits: 2 })}
-                            </span>
-                        </div>
-
-                        <div className="grid grid-cols-2 gap-4">
-                            <div className="text-center p-3 rounded-xl bg-indigo-50 dark:bg-indigo-900/20 text-indigo-700 dark:text-indigo-400 text-sm">
-                                <span className="block font-bold mb-1">{summary.equityCount}</span>
-                                Equity TXNs
-                            </div>
-                            <div className="text-center p-3 rounded-xl bg-orange-50 dark:bg-orange-900/20 text-orange-700 dark:text-orange-400 text-sm">
-                                <span className="block font-bold mb-1">{summary.debtCount}</span>
-                                Debt TXNs
-                            </div>
-                        </div>
+                            );
+                        })}
                     </div>
 
                     {error && (
@@ -227,12 +230,12 @@ export function CapitalGainsImporter() {
                     <button
                         onClick={() => handleImport(false)}
                         disabled={isLoading}
-                        className="w-full mt-8 flex items-center justify-center gap-2 bg-[var(--color-brand-navy)] hover:bg-[var(--color-brand-navy-light)] disabled:opacity-60 text-white py-4 rounded-2xl font-semibold text-lg transition-colors shadow-md"
+                        className="w-full mt-8 flex items-center justify-center gap-2 bg-[var(--color-brand-navy)] hover:bg-[var(--color-brand-navy-light)] disabled:opacity-60 text-white py-4 landscape:py-3 rounded-2xl font-semibold text-lg landscape:text-base transition-colors shadow-md"
                     >
                         {isLoading ? (
                             <><Loader2 size={20} className="animate-spin" /> Importing…</>
                         ) : (
-                            <><CheckCircle2 size={20} /> Confirm & Save Data</>
+                            <><Upload size={20} className="landscape:w-5 landscape:h-5" /> Import {summary.rows.length} Trades</>
                         )}
                     </button>
                 </div>
