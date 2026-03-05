@@ -6,6 +6,7 @@ import { SummaryCards } from "@/components/dashboard/SummaryCards";
 import { SpendDonutChart, IncomeDonutChart } from "@/components/dashboard/DonutChart";
 import { RecentTransactions, CategoryCards } from "@/components/dashboard/RecentTransactions";
 import { getTransactions } from "@/app/actions/transactions";
+import { getWallets } from "@/app/actions/wallets";
 import { Loader2 } from "lucide-react";
 import Link from "next/link";
 
@@ -71,58 +72,70 @@ export default function DashboardPage() {
         incomeDonutData: any[];
         categoryData: any[];
         transactions: any[];
+        wallets: any[];
     }>({
         summary: { totalBalance: 0, income: 0, expenses: 0 },
         spendDonutData: [],
         incomeDonutData: [],
         categoryData: [],
         transactions: [],
+        wallets: [],
     });
 
-    useEffect(() => {
-        async function fetchData() {
-            setLoading(true);
-            const res = await getTransactions({
+    const fetchData = async () => {
+        setLoading(true);
+        const [res, walletsRes] = await Promise.all([
+            getTransactions({
                 month: currentDate.getMonth(),
                 year: currentDate.getFullYear(),
                 limit: 200
+            }),
+            getWallets()
+        ]);
+
+        if (res.data) {
+            let income = 0;
+            let expenses = 0;
+            const expenseCategoryMap: Record<string, number> = {};
+            const incomeCategoryMap: Record<string, number> = {};
+
+            res.data.forEach((tx) => {
+                if (tx.type === "INCOME") {
+                    income += tx.amount;
+                    incomeCategoryMap[tx.category] = (incomeCategoryMap[tx.category] || 0) + tx.amount;
+                } else if (tx.type === "EXPENSE") {
+                    expenses += tx.amount;
+                    expenseCategoryMap[tx.category] = (expenseCategoryMap[tx.category] || 0) + tx.amount;
+                }
             });
 
-            if (res.data) {
-                let income = 0;
-                let expenses = 0;
-                const expenseCategoryMap: Record<string, number> = {};
-                const incomeCategoryMap: Record<string, number> = {};
+            const buildChartData = (map: Record<string, number>) =>
+                Object.entries(map)
+                    .map(([name, value]) => ({ name, value, color: getColor(name) }))
+                    .sort((a, b) => b.value - a.value);
 
-                res.data.forEach((tx) => {
-                    if (tx.type === "INCOME") {
-                        income += tx.amount;
-                        incomeCategoryMap[tx.category] = (incomeCategoryMap[tx.category] || 0) + tx.amount;
-                    } else if (tx.type === "EXPENSE") {
-                        expenses += tx.amount;
-                        expenseCategoryMap[tx.category] = (expenseCategoryMap[tx.category] || 0) + tx.amount;
-                    }
-                });
+            const spendData = buildChartData(expenseCategoryMap);
 
-                const buildChartData = (map: Record<string, number>) =>
-                    Object.entries(map)
-                        .map(([name, value]) => ({ name, value, color: getColor(name) }))
-                        .sort((a, b) => b.value - a.value);
-
-                const spendData = buildChartData(expenseCategoryMap);
-
-                setData({
-                    summary: { totalBalance: income - expenses, income, expenses },
-                    spendDonutData: spendData,
-                    incomeDonutData: buildChartData(incomeCategoryMap),
-                    categoryData: spendData.map(d => ({ category: d.name, amount: d.value, color: d.color })),
-                    transactions: res.data.slice(0, 20),
-                });
-            }
-            setLoading(false);
+            setData({
+                summary: { totalBalance: income - expenses, income, expenses },
+                spendDonutData: spendData,
+                incomeDonutData: buildChartData(incomeCategoryMap),
+                categoryData: spendData.map(d => ({ category: d.name, amount: d.value, color: d.color })),
+                transactions: res.data.slice(0, 20),
+                wallets: walletsRes.data || [],
+            });
         }
+        setLoading(false);
+    };
+
+    useEffect(() => {
         fetchData();
     }, [currentDate]);
+
+    // Triggers data refresh when a transaction is edited/deleted
+    const handleTransactionChange = () => {
+        fetchData();
+    };
 
     return (
         <div className="p-4 md:p-8 max-w-7xl mx-auto pb-24 md:pb-8">
@@ -215,7 +228,12 @@ export default function DashboardPage() {
                                 </Link>
                             </div>
                             <div className="flex-1 overflow-y-auto pr-2 custom-scrollbar">
-                                <RecentTransactions transactions={data.transactions} />
+                                <RecentTransactions
+                                    transactions={data.transactions}
+                                    wallets={data.wallets}
+                                    onUpdate={handleTransactionChange}
+                                    onDelete={handleTransactionChange}
+                                />
                             </div>
                         </div>
                     </div>
