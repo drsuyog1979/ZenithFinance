@@ -55,7 +55,7 @@ model Transaction {
   wallet      Wallet          @relation(fields: [walletId], references: [id], onDelete: Cascade)
 
   @@unique([userId, date, amount, description])
-  @@index([userId, date])
+  @@index([userId, date(sort: Desc)])
   @@index([userId, category])
   @@index([walletId])
 }
