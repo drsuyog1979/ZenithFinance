@@ -9,8 +9,8 @@ export function BottomNav() {
 
   const navItems = [
     { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
-    { name: "Wallets", href: "/wallets", icon: Wallet },
     { name: "Add", href: "/transactions/new", icon: PlusCircle, special: true },
+    { name: "Wallets", href: "/wallets", icon: Wallet },
   ];
 
   return (
