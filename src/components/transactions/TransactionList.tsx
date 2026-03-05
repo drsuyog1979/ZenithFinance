@@ -316,243 +316,241 @@ export function TransactionList({
                     </div>
                 </div>
             )}
-        </div>
-
-            {/* ── Edit Modal ── */ }
-    {
-        editingTx && (
-            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4" onClick={cancelEdit}>
-                <div
-                    className="bg-white dark:bg-gray-900 rounded-3xl shadow-2xl w-full max-w-md p-6 space-y-5 animate-in fade-in zoom-in-95"
-                    onClick={(e) => e.stopPropagation()}
-                >
-                    <div className="flex items-center justify-between">
-                        <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100">Edit Transaction</h2>
-                        <button onClick={cancelEdit} className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-xl transition-colors" title="Close" aria-label="Close edit dialog">
-                            <X size={20} className="text-gray-500" />
-                        </button>
-                    </div>
-
-                    {/* Amount */}
-                    <div>
-                        <label className="text-sm font-medium text-gray-700 dark:text-gray-300 block mb-1.5">Amount (₹)</label>
-                        <input
-                            type="number"
-                            step="0.01"
-                            value={editForm.amount}
-                            onChange={(e) => setEditForm({ ...editForm, amount: e.target.value })}
-                            className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-[var(--color-brand-navy)] outline-none text-lg font-semibold"
-                        />
-                    </div>
-
-                    {/* Type */}
-                    <div>
-                        <label className="text-sm font-medium text-gray-700 dark:text-gray-300 block mb-1.5">Type</label>
-                        <div className="grid grid-cols-4 gap-2">
-                            {["INCOME", "EXPENSE", "INVESTMENT", "TRANSFER"].map(t => (
-                                <button
-                                    key={t}
-                                    onClick={() => setEditForm({ ...editForm, type: t })}
-                                    className={`py-2 rounded-xl text-xs font-semibold transition-all border ${editForm.type === t
-                                        ? t === "INCOME" ? "bg-emerald-500 text-white border-emerald-500"
-                                            : t === "EXPENSE" ? "bg-red-500 text-white border-red-500"
-                                                : t === "INVESTMENT" ? "bg-blue-500 text-white border-blue-500"
-                                                    : "bg-gray-500 text-white border-gray-500"
-                                        : "bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-400 border-gray-200 dark:border-gray-700 hover:border-gray-400"
-                                        }`}
-                                >
-                                    {t === "INCOME" ? "Income" : t === "EXPENSE" ? "Expense" : t === "INVESTMENT" ? "Invest." : "Transfer"}
+            {/* ── Edit Modal ── */}
+            {
+                editingTx && (
+                    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4" onClick={cancelEdit}>
+                        <div
+                            className="bg-white dark:bg-gray-900 rounded-3xl shadow-2xl w-full max-w-md p-6 space-y-5 animate-in fade-in zoom-in-95"
+                            onClick={(e) => e.stopPropagation()}
+                        >
+                            <div className="flex items-center justify-between">
+                                <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100">Edit Transaction</h2>
+                                <button onClick={cancelEdit} className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-xl transition-colors" title="Close" aria-label="Close edit dialog">
+                                    <X size={20} className="text-gray-500" />
                                 </button>
-                            ))}
-                        </div>
-                    </div>
-
-                    {/* Category */}
-                    <div>
-                        <label className="text-sm font-medium text-gray-700 dark:text-gray-300 block mb-1.5">Category</label>
-                        <select
-                            value={allCategories.some(c => c.name === editForm.category) ? editForm.category : "__custom__"}
-                            onChange={(e) => setEditForm({ ...editForm, category: e.target.value })}
-                            className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-[var(--color-brand-navy)] outline-none"
-                            aria-label="Category"
-                            title="Category"
-                        >
-                            {allCategories.map(c => (
-                                <option key={c.name} value={c.name}>{c.name}</option>
-                            ))}
-                            {!allCategories.some(c => c.name === editForm.category) && (
-                                <option value={editForm.category}>{editForm.category} (custom)</option>
-                            )}
-                        </select>
-                    </div>
-
-                    {/* Description */}
-                    <div>
-                        <label className="text-sm font-medium text-gray-700 dark:text-gray-300 block mb-1.5">Description</label>
-                        <input
-                            type="text"
-                            value={editForm.description}
-                            onChange={(e) => setEditForm({ ...editForm, description: e.target.value })}
-                            placeholder="Optional note..."
-                            className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-[var(--color-brand-navy)] outline-none"
-                        />
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-4">
-                        {/* Date */}
-                        <div>
-                            <label className="text-sm font-medium text-gray-700 dark:text-gray-300 block mb-1.5">Date</label>
-                            <input
-                                type="date"
-                                value={editForm.date}
-                                onChange={(e) => setEditForm({ ...editForm, date: e.target.value })}
-                                className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-[var(--color-brand-navy)] outline-none"
-                            />
-                        </div>
-
-                        {/* Wallet */}
-                        <div>
-                            <label className="text-sm font-medium text-gray-700 dark:text-gray-300 block mb-1.5">Account</label>
-                            <select
-                                value={editForm.walletId}
-                                onChange={(e) => setEditForm({ ...editForm, walletId: e.target.value })}
-                                className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-[var(--color-brand-navy)] outline-none"
-                                aria-label="Account"
-                                title="Account"
-                            >
-                                {wallets.map(w => (
-                                    <option key={w.id} value={w.id}>{w.name}</option>
-                                ))}
-                            </select>
-                        </div>
-                    </div>
-
-                    {/* Actions */}
-                    <div className="flex gap-3 pt-2">
-                        <button
-                            onClick={saveEdit}
-                            disabled={isSaving || !editForm.amount}
-                            className="flex-1 py-3 bg-[var(--color-brand-navy)] text-white rounded-xl font-semibold flex items-center justify-center gap-2 hover:opacity-90 transition-opacity disabled:opacity-50"
-                        >
-                            {isSaving ? <Loader2 size={18} className="animate-spin" /> : <Check size={18} />}
-                            Save changes
-                        </button>
-                        <button
-                            onClick={cancelEdit}
-                            className="px-6 py-3 border border-gray-200 dark:border-gray-700 rounded-xl text-gray-600 dark:text-gray-400 font-medium hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
-                        >
-                            Cancel
-                        </button>
-                    </div>
-                </div>
-            </div>
-        )
-    }
-
-    {/* ── Transaction List ── */ }
-    {
-        sortedDates.length === 0 ? (
-            <div className="text-center py-16 text-gray-400">
-                No transactions match your filters.
-            </div>
-        ) : (
-            <div className="space-y-8">
-                {sortedDates.map(dateStr => {
-                    const txs = grouped[dateStr];
-                    const dailyTotal = txs.reduce((acc, tx) => acc + (tx.type === 'EXPENSE' ? -tx.amount : tx.type === 'INCOME' ? tx.amount : 0), 0);
-
-                    return (
-                        <div key={dateStr} className="bg-white dark:bg-gray-900 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-800 overflow-hidden">
-                            <div className="bg-gray-50 dark:bg-gray-800/50 px-5 py-3 border-b border-gray-100 dark:border-gray-800 flex justify-between items-center">
-                                <h3 className="font-semibold text-gray-900 dark:text-gray-100">
-                                    {format(new Date(dateStr), "EEEE, MMM d")}
-                                </h3>
-                                <span className={`font-semibold text-sm ${dailyTotal > 0 ? 'text-emerald-600 dark:text-emerald-400' :
-                                    dailyTotal < 0 ? 'text-red-500 dark:text-red-400' :
-                                        'text-gray-400'
-                                    }`}>
-                                    {dailyTotal > 0 ? '+' : dailyTotal < 0 ? '-' : ''}{dailyTotal !== 0 ? formatINR(Math.abs(dailyTotal)) : ''}
-                                </span>
                             </div>
 
-                            <div className="divide-y divide-gray-50 dark:divide-gray-800/50">
-                                {txs.map((tx) => {
-                                    const Icon = getIcon(tx.category);
-                                    const isIncome = tx.type === "INCOME";
-                                    const isExpense = tx.type === "EXPENSE";
-                                    const isInvestment = tx.type === "INVESTMENT";
-                                    const color = getColor(tx.category);
-                                    const iconColor = isIncome ? "#10b981" : isExpense ? "#ef4444" : isInvestment ? "#3b82f6" : color;
+                            {/* Amount */}
+                            <div>
+                                <label className="text-sm font-medium text-gray-700 dark:text-gray-300 block mb-1.5">Amount (₹)</label>
+                                <input
+                                    type="number"
+                                    step="0.01"
+                                    value={editForm.amount}
+                                    onChange={(e) => setEditForm({ ...editForm, amount: e.target.value })}
+                                    className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-[var(--color-brand-navy)] outline-none text-lg font-semibold"
+                                />
+                            </div>
 
-                                    return (
-                                        <div key={tx.id} className="p-4 hover:bg-gray-50/50 dark:hover:bg-gray-800/30 transition-colors group flex items-center justify-between">
-                                            <div className="flex items-center gap-4">
-                                                <div
-                                                    className="w-12 h-12 rounded-xl flex items-center justify-center dynamic-bg-light dynamic-text"
-                                                    style={{ "--dynamic-color": iconColor } as React.CSSProperties}
-                                                >
-                                                    <Icon size={24} />
-                                                </div>
-                                                <div>
-                                                    <p className="font-medium text-gray-900 dark:text-gray-100 max-w-[200px] sm:max-w-xs truncate">
-                                                        {tx.description || tx.category}
-                                                    </p>
-                                                    <p className="text-xs text-gray-500 mt-0.5 flex flex-wrap items-center gap-2">
-                                                        <span>{tx.category}</span>
-                                                        <span className="w-1 h-1 bg-gray-300 dark:bg-gray-700 rounded-full" />
-                                                        <span>{tx.wallet?.name}</span>
-                                                        {tx.source !== 'MANUAL' && (
-                                                            <>
+                            {/* Type */}
+                            <div>
+                                <label className="text-sm font-medium text-gray-700 dark:text-gray-300 block mb-1.5">Type</label>
+                                <div className="grid grid-cols-4 gap-2">
+                                    {["INCOME", "EXPENSE", "INVESTMENT", "TRANSFER"].map(t => (
+                                        <button
+                                            key={t}
+                                            onClick={() => setEditForm({ ...editForm, type: t })}
+                                            className={`py-2 rounded-xl text-xs font-semibold transition-all border ${editForm.type === t
+                                                ? t === "INCOME" ? "bg-emerald-500 text-white border-emerald-500"
+                                                    : t === "EXPENSE" ? "bg-red-500 text-white border-red-500"
+                                                        : t === "INVESTMENT" ? "bg-blue-500 text-white border-blue-500"
+                                                            : "bg-gray-500 text-white border-gray-500"
+                                                : "bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-400 border-gray-200 dark:border-gray-700 hover:border-gray-400"
+                                                }`}
+                                        >
+                                            {t === "INCOME" ? "Income" : t === "EXPENSE" ? "Expense" : t === "INVESTMENT" ? "Invest." : "Transfer"}
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+
+                            {/* Category */}
+                            <div>
+                                <label className="text-sm font-medium text-gray-700 dark:text-gray-300 block mb-1.5">Category</label>
+                                <select
+                                    value={allCategories.some(c => c.name === editForm.category) ? editForm.category : "__custom__"}
+                                    onChange={(e) => setEditForm({ ...editForm, category: e.target.value })}
+                                    className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-[var(--color-brand-navy)] outline-none"
+                                    aria-label="Category"
+                                    title="Category"
+                                >
+                                    {allCategories.map(c => (
+                                        <option key={c.name} value={c.name}>{c.name}</option>
+                                    ))}
+                                    {!allCategories.some(c => c.name === editForm.category) && (
+                                        <option value={editForm.category}>{editForm.category} (custom)</option>
+                                    )}
+                                </select>
+                            </div>
+
+                            {/* Description */}
+                            <div>
+                                <label className="text-sm font-medium text-gray-700 dark:text-gray-300 block mb-1.5">Description</label>
+                                <input
+                                    type="text"
+                                    value={editForm.description}
+                                    onChange={(e) => setEditForm({ ...editForm, description: e.target.value })}
+                                    placeholder="Optional note..."
+                                    className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-[var(--color-brand-navy)] outline-none"
+                                />
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-4">
+                                {/* Date */}
+                                <div>
+                                    <label className="text-sm font-medium text-gray-700 dark:text-gray-300 block mb-1.5">Date</label>
+                                    <input
+                                        type="date"
+                                        value={editForm.date}
+                                        onChange={(e) => setEditForm({ ...editForm, date: e.target.value })}
+                                        className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-[var(--color-brand-navy)] outline-none"
+                                    />
+                                </div>
+
+                                {/* Wallet */}
+                                <div>
+                                    <label className="text-sm font-medium text-gray-700 dark:text-gray-300 block mb-1.5">Account</label>
+                                    <select
+                                        value={editForm.walletId}
+                                        onChange={(e) => setEditForm({ ...editForm, walletId: e.target.value })}
+                                        className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-[var(--color-brand-navy)] outline-none"
+                                        aria-label="Account"
+                                        title="Account"
+                                    >
+                                        {wallets.map(w => (
+                                            <option key={w.id} value={w.id}>{w.name}</option>
+                                        ))}
+                                    </select>
+                                </div>
+                            </div>
+
+                            {/* Actions */}
+                            <div className="flex gap-3 pt-2">
+                                <button
+                                    onClick={saveEdit}
+                                    disabled={isSaving || !editForm.amount}
+                                    className="flex-1 py-3 bg-[var(--color-brand-navy)] text-white rounded-xl font-semibold flex items-center justify-center gap-2 hover:opacity-90 transition-opacity disabled:opacity-50"
+                                >
+                                    {isSaving ? <Loader2 size={18} className="animate-spin" /> : <Check size={18} />}
+                                    Save changes
+                                </button>
+                                <button
+                                    onClick={cancelEdit}
+                                    className="px-6 py-3 border border-gray-200 dark:border-gray-700 rounded-xl text-gray-600 dark:text-gray-400 font-medium hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+                                >
+                                    Cancel
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                )
+            }
+
+            {/* ── Transaction List ── */}
+            {
+                sortedDates.length === 0 ? (
+                    <div className="text-center py-16 text-gray-400">
+                        No transactions match your filters.
+                    </div>
+                ) : (
+                    <div className="space-y-8">
+                        {sortedDates.map(dateStr => {
+                            const txs = grouped[dateStr];
+                            const dailyTotal = txs.reduce((acc, tx) => acc + (tx.type === 'EXPENSE' ? -tx.amount : tx.type === 'INCOME' ? tx.amount : 0), 0);
+
+                            return (
+                                <div key={dateStr} className="bg-white dark:bg-gray-900 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-800 overflow-hidden">
+                                    <div className="bg-gray-50 dark:bg-gray-800/50 px-5 py-3 border-b border-gray-100 dark:border-gray-800 flex justify-between items-center">
+                                        <h3 className="font-semibold text-gray-900 dark:text-gray-100">
+                                            {format(new Date(dateStr), "EEEE, MMM d")}
+                                        </h3>
+                                        <span className={`font-semibold text-sm ${dailyTotal > 0 ? 'text-emerald-600 dark:text-emerald-400' :
+                                            dailyTotal < 0 ? 'text-red-500 dark:text-red-400' :
+                                                'text-gray-400'
+                                            }`}>
+                                            {dailyTotal > 0 ? '+' : dailyTotal < 0 ? '-' : ''}{dailyTotal !== 0 ? formatINR(Math.abs(dailyTotal)) : ''}
+                                        </span>
+                                    </div>
+
+                                    <div className="divide-y divide-gray-50 dark:divide-gray-800/50">
+                                        {txs.map((tx) => {
+                                            const Icon = getIcon(tx.category);
+                                            const isIncome = tx.type === "INCOME";
+                                            const isExpense = tx.type === "EXPENSE";
+                                            const isInvestment = tx.type === "INVESTMENT";
+                                            const color = getColor(tx.category);
+                                            const iconColor = isIncome ? "#10b981" : isExpense ? "#ef4444" : isInvestment ? "#3b82f6" : color;
+
+                                            return (
+                                                <div key={tx.id} className="p-4 hover:bg-gray-50/50 dark:hover:bg-gray-800/30 transition-colors group flex items-center justify-between">
+                                                    <div className="flex items-center gap-4">
+                                                        <div
+                                                            className="w-12 h-12 rounded-xl flex items-center justify-center dynamic-bg-light dynamic-text"
+                                                            style={{ "--dynamic-color": iconColor } as React.CSSProperties}
+                                                        >
+                                                            <Icon size={24} />
+                                                        </div>
+                                                        <div>
+                                                            <p className="font-medium text-gray-900 dark:text-gray-100 max-w-[200px] sm:max-w-xs truncate">
+                                                                {tx.description || tx.category}
+                                                            </p>
+                                                            <p className="text-xs text-gray-500 mt-0.5 flex flex-wrap items-center gap-2">
+                                                                <span>{tx.category}</span>
                                                                 <span className="w-1 h-1 bg-gray-300 dark:bg-gray-700 rounded-full" />
-                                                                <span className="bg-[var(--color-brand-navy)]/10 text-[var(--color-brand-navy)] dark:bg-blue-900/30 dark:text-blue-400 px-1.5 py-0.5 rounded uppercase font-semibold text-[10px] tracking-wider">
-                                                                    {tx.source}
-                                                                </span>
-                                                            </>
-                                                        )}
-                                                    </p>
-                                                </div>
-                                            </div>
+                                                                <span>{tx.wallet?.name}</span>
+                                                                {tx.source !== 'MANUAL' && (
+                                                                    <>
+                                                                        <span className="w-1 h-1 bg-gray-300 dark:bg-gray-700 rounded-full" />
+                                                                        <span className="bg-[var(--color-brand-navy)]/10 text-[var(--color-brand-navy)] dark:bg-blue-900/30 dark:text-blue-400 px-1.5 py-0.5 rounded uppercase font-semibold text-[10px] tracking-wider">
+                                                                            {tx.source}
+                                                                        </span>
+                                                                    </>
+                                                                )}
+                                                            </p>
+                                                        </div>
+                                                    </div>
 
-                                            <div className="flex items-center gap-4">
-                                                <div className={`font-semibold whitespace-nowrap ${isIncome ? 'text-emerald-600 dark:text-emerald-400' :
-                                                    isExpense ? 'text-red-500 dark:text-red-400' :
-                                                        isInvestment ? 'text-blue-500 dark:text-blue-400' :
-                                                            'text-gray-500 dark:text-gray-400'
-                                                    }`}>
-                                                    {isIncome ? '+' : isExpense ? '-' : ''}{formatINR(tx.amount)}
-                                                </div>
+                                                    <div className="flex items-center gap-4">
+                                                        <div className={`font-semibold whitespace-nowrap ${isIncome ? 'text-emerald-600 dark:text-emerald-400' :
+                                                            isExpense ? 'text-red-500 dark:text-red-400' :
+                                                                isInvestment ? 'text-blue-500 dark:text-blue-400' :
+                                                                    'text-gray-500 dark:text-gray-400'
+                                                            }`}>
+                                                            {isIncome ? '+' : isExpense ? '-' : ''}{formatINR(tx.amount)}
+                                                        </div>
 
-                                                {/* Actions appear on hover */}
-                                                <div className="flex opacity-100 sm:opacity-0 group-hover:opacity-100 transition-opacity gap-1">
-                                                    <button
-                                                        onClick={(e) => openEdit(tx, e)}
-                                                        title="Edit transaction"
-                                                        aria-label="Edit transaction"
-                                                        className="p-2 text-gray-400 hover:text-[var(--color-brand-navy)] transition-colors rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800"
-                                                    >
-                                                        <Edit2 size={16} />
-                                                    </button>
-                                                    <button
-                                                        onClick={(e) => handleDelete(tx.id, e)}
-                                                        disabled={deletingId === tx.id}
-                                                        title="Delete transaction"
-                                                        aria-label="Delete transaction"
-                                                        className="p-2 text-gray-400 hover:text-red-500 transition-colors rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 disabled:opacity-50"
-                                                    >
-                                                        {deletingId === tx.id ? <Loader2 size={16} className="animate-spin" /> : <Trash2 size={16} />}
-                                                    </button>
+                                                        {/* Actions appear on hover */}
+                                                        <div className="flex opacity-100 sm:opacity-0 group-hover:opacity-100 transition-opacity gap-1">
+                                                            <button
+                                                                onClick={(e) => openEdit(tx, e)}
+                                                                title="Edit transaction"
+                                                                aria-label="Edit transaction"
+                                                                className="p-2 text-gray-400 hover:text-[var(--color-brand-navy)] transition-colors rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800"
+                                                            >
+                                                                <Edit2 size={16} />
+                                                            </button>
+                                                            <button
+                                                                onClick={(e) => handleDelete(tx.id, e)}
+                                                                disabled={deletingId === tx.id}
+                                                                title="Delete transaction"
+                                                                aria-label="Delete transaction"
+                                                                className="p-2 text-gray-400 hover:text-red-500 transition-colors rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 disabled:opacity-50"
+                                                            >
+                                                                {deletingId === tx.id ? <Loader2 size={16} className="animate-spin" /> : <Trash2 size={16} />}
+                                                            </button>
+                                                        </div>
+                                                    </div>
                                                 </div>
-                                            </div>
-                                        </div>
-                                    );
-                                })}
-                            </div>
-                        </div>
-                    );
-                })}
-            </div>
-        )
-    }
+                                            );
+                                        })}
+                                    </div>
+                                </div>
+                            );
+                        })}
+                    </div>
+                )
+            }
         </div >
     );
 }

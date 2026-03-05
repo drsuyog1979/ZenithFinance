@@ -154,7 +154,7 @@ export function TaxAssistant() {
                 <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">Calculation Error</h3>
                 <p className="text-gray-500 dark:text-gray-400 mb-6 max-w-sm mx-auto">{error}</p>
                 <button
-                    onClick={loadData}
+                    onClick={() => loadData()}
                     className="px-6 py-2 bg-indigo-600 text-white rounded-xl font-bold hover:bg-indigo-700 transition-all"
                 >
                     Retry Calculation
@@ -214,8 +214,8 @@ export function TaxAssistant() {
                                             loadData(next);
                                         }}
                                         className={`w-full flex items-center justify-between px-4 py-3 rounded-xl transition-all ${isIncluded
-                                                ? 'bg-violet-50 dark:bg-violet-900/10 border border-violet-200 dark:border-violet-800/40'
-                                                : 'bg-gray-50 dark:bg-gray-800/50 border border-gray-100 dark:border-gray-800 opacity-60'
+                                            ? 'bg-violet-50 dark:bg-violet-900/10 border border-violet-200 dark:border-violet-800/40'
+                                            : 'bg-gray-50 dark:bg-gray-800/50 border border-gray-100 dark:border-gray-800 opacity-60'
                                             }`}
                                     >
                                         <div className="flex items-center gap-3">
