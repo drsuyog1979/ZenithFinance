@@ -15,27 +15,31 @@ export async function getWallets() {
         const userId = await getUserId();
         const wallets = await prisma.wallet.findMany({
             where: { userId },
-            include: {
-                transactions: {
-                    select: {
-                        amount: true,
-                        type: true
-                    }
-                }
-            },
             orderBy: { createdAt: 'asc' }
+        });
+
+        // Group by wallet and transaction type to sum amounts in the DB
+        const aggregations = await prisma.transaction.groupBy({
+            by: ['walletId', 'type'],
+            where: { userId },
+            _sum: {
+                amount: true
+            }
         });
 
         // Calculate current balance for each wallet
         const walletsWithBalance = wallets.map(w => {
             let balance = w.openingBalance;
-            w.transactions.forEach(tx => {
-                if (tx.type === 'INCOME') balance += tx.amount;
-                else if (tx.type === 'EXPENSE') balance -= tx.amount;
-            });
-            const { transactions, ...walletWithoutTxs } = w;
+            aggregations
+                .filter(agg => agg.walletId === w.id)
+                .forEach(agg => {
+                    const total = agg._sum.amount || 0;
+                    if (agg.type === 'INCOME') balance += total;
+                    else if (agg.type === 'EXPENSE') balance -= total;
+                });
+
             return {
-                ...walletWithoutTxs,
+                ...w,
                 currentBalance: balance
             };
         });
