@@ -2,12 +2,13 @@
 
 import { useState, useEffect, useMemo } from "react";
 import { getTaxSummary, updateTaxProfile, getITRSummary, resetTaxProfile } from "@/app/actions/tax";
+import { getWallets } from "@/app/actions/wallets";
 import { TaxRegime, TaxpayerType } from "@prisma/client";
 import {
     ShieldAlert, Info, Calculator, Calendar, FileText,
     ArrowRight, CheckCircle2, AlertTriangle, ExternalLink,
     ChevronDown, ChevronUp, Download, Loader2, IndianRupee,
-    Briefcase, Activity, Clock
+    Briefcase, Activity, Clock, Wallet, ToggleLeft, ToggleRight
 } from "lucide-react";
 import { format } from "date-fns";
 import jsPDF from "jspdf";
@@ -18,15 +19,22 @@ export function TaxAssistant() {
     const [summary, setSummary] = useState<any>(null);
     const [error, setError] = useState<string | null>(null);
     const [showSetup, setShowSetup] = useState(false);
+    const [wallets, setWallets] = useState<any[]>([]);
+    const [excludedWalletIds, setExcludedWalletIds] = useState<string[]>([]);
+    const [showWalletFilter, setShowWalletFilter] = useState(false);
 
-    const loadData = async () => {
+    const loadData = async (excluded?: string[]) => {
         setLoading(true);
-        const res = await getTaxSummary();
+        const [res, walletRes] = await Promise.all([
+            getTaxSummary(excluded ?? excludedWalletIds),
+            getWallets()
+        ]);
         if (res.error || !res.data) setError(res.error || "Failed to load summary");
         else {
             setSummary(res.data);
             if (!res.data.profile) setShowSetup(true);
         }
+        if (walletRes.data) setWallets(walletRes.data);
         setLoading(false);
     };
 
@@ -165,6 +173,76 @@ export function TaxAssistant() {
                     This is an estimate for planning purposes only and does not constitute professional tax advice. All calculations are indicative. Consult a Chartered Accountant for final filing.
                 </p>
             </div>
+
+            {/* Wallet Filter Toggle */}
+            {!showSetup && wallets.length > 0 && (
+                <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-sm overflow-hidden">
+                    <button
+                        onClick={() => setShowWalletFilter(!showWalletFilter)}
+                        className="w-full px-5 py-4 flex items-center justify-between hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors"
+                    >
+                        <div className="flex items-center gap-3">
+                            <div className="w-9 h-9 rounded-xl bg-violet-50 dark:bg-violet-900/20 text-violet-500 flex items-center justify-center">
+                                <Wallet size={18} />
+                            </div>
+                            <div className="text-left">
+                                <p className="text-sm font-bold text-gray-900 dark:text-gray-100">Wallet Filter</p>
+                                <p className="text-[10px] text-gray-500 font-medium">
+                                    {excludedWalletIds.length === 0
+                                        ? `All ${wallets.length} wallets included`
+                                        : `${wallets.length - excludedWalletIds.length} of ${wallets.length} wallets included`
+                                    }
+                                </p>
+                            </div>
+                        </div>
+                        {showWalletFilter ? <ChevronUp size={18} className="text-gray-400" /> : <ChevronDown size={18} className="text-gray-400" />}
+                    </button>
+
+                    {showWalletFilter && (
+                        <div className="border-t border-gray-100 dark:border-gray-800 px-5 py-3 space-y-2">
+                            <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider mb-2">Toggle wallets to include/exclude from income projection</p>
+                            {wallets.map((w: any) => {
+                                const isIncluded = !excludedWalletIds.includes(w.id);
+                                return (
+                                    <button
+                                        key={w.id}
+                                        onClick={() => {
+                                            const next = isIncluded
+                                                ? [...excludedWalletIds, w.id]
+                                                : excludedWalletIds.filter((id: string) => id !== w.id);
+                                            setExcludedWalletIds(next);
+                                            loadData(next);
+                                        }}
+                                        className={`w-full flex items-center justify-between px-4 py-3 rounded-xl transition-all ${isIncluded
+                                                ? 'bg-violet-50 dark:bg-violet-900/10 border border-violet-200 dark:border-violet-800/40'
+                                                : 'bg-gray-50 dark:bg-gray-800/50 border border-gray-100 dark:border-gray-800 opacity-60'
+                                            }`}
+                                    >
+                                        <div className="flex items-center gap-3">
+                                            <div
+                                                className="w-7 h-7 rounded-lg flex items-center justify-center text-xs font-black"
+                                                style={{
+                                                    backgroundColor: isIncluded ? `${w.color || '#8b5cf6'}20` : '#e5e7eb',
+                                                    color: isIncluded ? (w.color || '#8b5cf6') : '#9ca3af'
+                                                }}
+                                            >
+                                                {w.name?.[0]?.toUpperCase() || 'W'}
+                                            </div>
+                                            <span className={`text-sm font-semibold ${isIncluded ? 'text-gray-900 dark:text-gray-100' : 'text-gray-400 line-through'}`}>
+                                                {w.name}
+                                            </span>
+                                        </div>
+                                        {isIncluded
+                                            ? <ToggleRight size={24} className="text-violet-500" />
+                                            : <ToggleLeft size={24} className="text-gray-300" />
+                                        }
+                                    </button>
+                                );
+                            })}
+                        </div>
+                    )}
+                </div>
+            )}
 
             {showSetup ? (
                 <TaxProfileForm

@@ -24,8 +24,9 @@ export function BottomNav() {
         if (item.special) {
           return (
             <Link key={item.name} href={item.href} className="relative flex items-center justify-center w-16">
-              <div className="absolute -top-6 bg-[var(--color-brand-navy)] hover:bg-[var(--color-brand-navy-light)] rounded-full p-3 shadow-lg text-white transition-colors">
-                <Icon size={28} />
+              <div className="absolute -top-6 landscape:-top-4 bg-[var(--color-brand-navy)] hover:bg-[var(--color-brand-navy-light)] rounded-full p-3 landscape:p-2 shadow-lg text-white transition-colors">
+                <Icon size={28} className="landscape:hidden" />
+                <Icon size={20} className="hidden landscape:block" />
               </div>
             </Link>
           );
@@ -35,13 +36,14 @@ export function BottomNav() {
           <Link
             key={item.name}
             href={item.href}
-            className={`flex flex-col items-center justify-center w-16 h-full gap-1 transition-colors ${isActive
+            className={`flex flex-col items-center justify-center w-16 h-full gap-1 landscape:gap-0 transition-colors ${isActive
               ? "text-[var(--color-brand-navy)] dark:text-[var(--color-brand-navy-light)] font-medium"
               : "text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200"
               }`}
           >
-            <Icon size={20} strokeWidth={isActive ? 2.5 : 2} />
-            <span className="text-[10px]">{item.name}</span>
+            <Icon size={20} className="landscape:hidden" strokeWidth={isActive ? 2.5 : 2} />
+            <Icon size={16} className="hidden landscape:block" strokeWidth={isActive ? 2.5 : 2} />
+            <span className="text-[10px] landscape:text-[8px]">{item.name}</span>
           </Link>
         );
       })}

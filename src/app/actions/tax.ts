@@ -62,7 +62,7 @@ export async function resetTaxProfile() {
     }
 }
 
-export async function getTaxSummary() {
+export async function getTaxSummary(excludedWalletIds?: string[]) {
     try {
         const userId = await getUserId();
         const profile = await prisma.taxProfile.findUnique({ where: { userId } });
@@ -81,12 +81,19 @@ export async function getTaxSummary() {
             fyEnd = new Date(currentYear, 2, 31);
         }
 
+        const incomeWhere: any = {
+            userId,
+            type: "INCOME",
+            date: { gte: fyStart, lte: fyEnd }
+        };
+
+        // Filter out excluded wallets if provided
+        if (excludedWalletIds && excludedWalletIds.length > 0) {
+            incomeWhere.walletId = { notIn: excludedWalletIds };
+        }
+
         const incomeAggr = await prisma.transaction.aggregate({
-            where: {
-                userId,
-                type: "INCOME",
-                date: { gte: fyStart, lte: fyEnd }
-            },
+            where: incomeWhere,
             _sum: { amount: true }
         });
 

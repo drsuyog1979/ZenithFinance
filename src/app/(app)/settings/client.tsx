@@ -7,7 +7,7 @@ import {
     ChevronDown, Loader2, Check, Utensils, Car, Zap, Tv, Briefcase, X, Plus,
     Lock, Trash2, TrendingUp, Phone, Banknote, Fuel, Edit2, Palette,
     ShoppingBag, Heart, Coffee, Gamepad2, Plane, Gift, GraduationCap,
-    Dumbbell, Beer, Music, Camera, Globe
+    Dumbbell, Beer, Music, Camera, Globe, Eye, EyeOff, KeyRound
 } from "lucide-react";
 import { createClient } from "@/utils/supabase/client";
 import { useRouter } from "next/navigation";
@@ -40,6 +40,17 @@ export function SettingsClient({ userEmail }: { userEmail: string }) {
     const [editColor, setEditColor] = useState("#9333ea");
     const [editIcon, setEditIcon] = useState("Tag");
     const [showIconPicker, setShowIconPicker] = useState<string | null>(null); // 'new' or category name
+
+    // Password change state
+    const [showPassword, setShowPassword] = useState(false);
+    const [currentPassword, setCurrentPassword] = useState("");
+    const [newPassword, setNewPassword] = useState("");
+    const [confirmPassword, setConfirmPassword] = useState("");
+    const [passwordLoading, setPasswordLoading] = useState(false);
+    const [passwordError, setPasswordError] = useState("");
+    const [passwordSuccess, setPasswordSuccess] = useState(false);
+    const [showCurrentPw, setShowCurrentPw] = useState(false);
+    const [showNewPw, setShowNewPw] = useState(false);
 
     const ICON_OPTIONS = [
         { name: "Tag", icon: Tag },
@@ -182,6 +193,44 @@ export function SettingsClient({ userEmail }: { userEmail: string }) {
         await supabase.auth.signOut();
         router.push('/login');
         router.refresh();
+    };
+
+    const handlePasswordChange = async () => {
+        setPasswordError("");
+        setPasswordSuccess(false);
+
+        if (!currentPassword) { setPasswordError("Please enter your current password."); return; }
+        if (newPassword.length < 6) { setPasswordError("New password must be at least 6 characters."); return; }
+        if (newPassword !== confirmPassword) { setPasswordError("Passwords do not match."); return; }
+
+        setPasswordLoading(true);
+        try {
+            // Verify current password first
+            const { error: signInError } = await supabase.auth.signInWithPassword({
+                email: userEmail,
+                password: currentPassword,
+            });
+            if (signInError) {
+                setPasswordError("Current password is incorrect.");
+                setPasswordLoading(false);
+                return;
+            }
+
+            // Update to new password
+            const { error: updateError } = await supabase.auth.updateUser({ password: newPassword });
+            if (updateError) {
+                setPasswordError(updateError.message);
+            } else {
+                setPasswordSuccess(true);
+                setCurrentPassword("");
+                setNewPassword("");
+                setConfirmPassword("");
+                setTimeout(() => setPasswordSuccess(false), 5000);
+            }
+        } catch (e: any) {
+            setPasswordError(e.message || "Something went wrong.");
+        }
+        setPasswordLoading(false);
     };
 
 
@@ -474,6 +523,114 @@ export function SettingsClient({ userEmail }: { userEmail: string }) {
                                         );
                                     })}
                                 </div>
+                            </div>
+                        )}
+                    </div>
+                </div>
+            </div>
+
+            {/* Security Section */}
+            <div className="bg-white dark:bg-gray-900 rounded-3xl shadow-sm border border-gray-100 dark:border-gray-800 overflow-hidden">
+                <div className="px-6 py-4 bg-gray-50/50 dark:bg-gray-800/50 border-b border-gray-100 dark:border-gray-800">
+                    <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Security</h3>
+                </div>
+
+                <div className="divide-y divide-gray-100 dark:divide-gray-800">
+                    <div>
+                        <button
+                            onClick={() => { setShowPassword(!showPassword); setShowCurrency(false); setShowCategories(false); setPasswordError(""); setPasswordSuccess(false); }}
+                            className="w-full p-6 flex items-center justify-between hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors text-left"
+                            aria-expanded={showPassword}
+                        >
+                            <div className="flex items-center gap-4">
+                                <div className="w-10 h-10 rounded-xl bg-rose-50 dark:bg-rose-900/20 text-rose-500 flex items-center justify-center">
+                                    <KeyRound size={20} />
+                                </div>
+                                <div>
+                                    <p className="font-semibold text-gray-900 dark:text-gray-100">Change Password</p>
+                                    <p className="text-sm text-gray-500">Update your account password</p>
+                                </div>
+                            </div>
+                            {showPassword
+                                ? <ChevronDown className="text-gray-400" size={20} />
+                                : <ChevronRight className="text-gray-400" size={20} />
+                            }
+                        </button>
+
+                        {showPassword && (
+                            <div className="border-t border-gray-100 dark:border-gray-800 px-6 pb-6 pt-4 space-y-4">
+                                {passwordSuccess && (
+                                    <div className="flex items-center gap-2 p-3 bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-400 rounded-xl text-sm font-medium">
+                                        <Check size={16} />
+                                        Password updated successfully!
+                                    </div>
+                                )}
+                                {passwordError && (
+                                    <div className="flex items-center gap-2 p-3 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 rounded-xl text-sm font-medium">
+                                        <X size={16} />
+                                        {passwordError}
+                                    </div>
+                                )}
+
+                                <div className="space-y-1">
+                                    <label className="block text-xs font-bold uppercase text-gray-400 tracking-wider">Current Password</label>
+                                    <div className="relative">
+                                        <input
+                                            type={showCurrentPw ? "text" : "password"}
+                                            value={currentPassword}
+                                            onChange={(e) => setCurrentPassword(e.target.value)}
+                                            placeholder="Enter current password"
+                                            className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-sm font-medium outline-none focus:ring-2 focus:ring-[var(--color-brand-navy)] pr-12"
+                                        />
+                                        <button
+                                            type="button"
+                                            onClick={() => setShowCurrentPw(!showCurrentPw)}
+                                            className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
+                                        >
+                                            {showCurrentPw ? <EyeOff size={18} /> : <Eye size={18} />}
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <div className="space-y-1">
+                                    <label className="block text-xs font-bold uppercase text-gray-400 tracking-wider">New Password</label>
+                                    <div className="relative">
+                                        <input
+                                            type={showNewPw ? "text" : "password"}
+                                            value={newPassword}
+                                            onChange={(e) => setNewPassword(e.target.value)}
+                                            placeholder="Min. 6 characters"
+                                            className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-sm font-medium outline-none focus:ring-2 focus:ring-[var(--color-brand-navy)] pr-12"
+                                        />
+                                        <button
+                                            type="button"
+                                            onClick={() => setShowNewPw(!showNewPw)}
+                                            className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
+                                        >
+                                            {showNewPw ? <EyeOff size={18} /> : <Eye size={18} />}
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <div className="space-y-1">
+                                    <label className="block text-xs font-bold uppercase text-gray-400 tracking-wider">Confirm New Password</label>
+                                    <input
+                                        type="password"
+                                        value={confirmPassword}
+                                        onChange={(e) => setConfirmPassword(e.target.value)}
+                                        placeholder="Re-enter new password"
+                                        className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-sm font-medium outline-none focus:ring-2 focus:ring-[var(--color-brand-navy)]"
+                                    />
+                                </div>
+
+                                <button
+                                    onClick={handlePasswordChange}
+                                    disabled={passwordLoading || !currentPassword || !newPassword || !confirmPassword}
+                                    className="w-full py-3 bg-[var(--color-brand-navy)] text-white rounded-xl text-sm font-bold hover:opacity-90 transition-all disabled:opacity-40 flex items-center justify-center gap-2 mt-2"
+                                >
+                                    {passwordLoading ? <Loader2 size={18} className="animate-spin" /> : <Lock size={16} />}
+                                    {passwordLoading ? "Updating..." : "Update Password"}
+                                </button>
                             </div>
                         )}
                     </div>

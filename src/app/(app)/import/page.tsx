@@ -10,7 +10,7 @@ export default function ImportPage() {
     const [importType, setImportType] = useState<"csv" | "pdf" | "cg">("pdf");
 
     return (
-        <div className="p-4 md:p-8 max-w-2xl mx-auto pb-24 md:pb-8">
+        <div className="p-4 md:p-8 max-w-2xl mx-auto pb-24 md:pb-8 landscape:pb-28 min-h-[calc(100dvh-4rem)]">
             <div className="mb-8">
                 <div className="flex items-center gap-3 mb-2">
                     <div className="w-10 h-10 rounded-xl bg-purple-100 dark:bg-purple-900/30 text-purple-600 flex items-center justify-center">
