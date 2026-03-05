@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, ChangeEvent } from "react";
 import {
     Upload, FileText, CheckCircle2, AlertCircle, ChevronRight,
     Loader2, ArrowLeft, Coins, BarChart3, PieChart, Info, Hash, TrendingUp
@@ -50,7 +50,7 @@ export function CapitalGainsImporter() {
         }
     }
 
-    async function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
+    async function handleFileChange(e: ChangeEvent<HTMLInputElement>) {
         const file = e.target.files?.[0];
         if (file) await processFile(file);
     }
