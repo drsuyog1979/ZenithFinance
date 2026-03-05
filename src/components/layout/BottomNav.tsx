@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, Wallet, PlusCircle, PieChart, Settings } from "lucide-react";
+import { LayoutDashboard, Wallet, PlusCircle, PieChart } from "lucide-react";
 
 export function BottomNav() {
   const pathname = usePathname();
@@ -12,7 +12,6 @@ export function BottomNav() {
     { name: "Wallets", href: "/wallets", icon: Wallet },
     { name: "Add", href: "/transactions/new", icon: PlusCircle, special: true },
     { name: "Analytics", href: "/analytics", icon: PieChart },
-    { name: "Settings", href: "/settings", icon: Settings },
   ];
 
   return (

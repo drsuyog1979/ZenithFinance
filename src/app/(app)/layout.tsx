@@ -1,6 +1,7 @@
 import { ReactNode } from "react";
 import { BottomNav } from "@/components/layout/BottomNav";
 import { Sidebar } from "@/components/layout/Sidebar";
+import { MobileHeader } from "@/components/layout/MobileHeader";
 
 export default function AppLayout({ children }: { children: ReactNode }) {
   return (
@@ -10,8 +11,11 @@ export default function AppLayout({ children }: { children: ReactNode }) {
         <Sidebar />
       </div>
 
+      {/* Mobile Top Header */}
+      <MobileHeader />
+
       {/* Main Content Area */}
-      <main className="flex-1 overflow-y-auto pb-16 md:pb-0 landscape:pb-14 relative touch-pan-y">
+      <main className="flex-1 overflow-y-auto pt-16 md:pt-0 landscape:pt-14 pb-16 md:pb-0 landscape:pb-12 relative touch-pan-y">
         {children}
       </main>
 
