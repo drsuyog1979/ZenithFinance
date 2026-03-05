@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import { format } from "date-fns";
 import {
     ShoppingBag, Utensils, Car, HeartPulse, Home, Zap, Tv, Briefcase,
@@ -72,15 +72,22 @@ export function TransactionList({
         } catch { }
     }, []);
 
-    const formatINR = (value: number) => {
+    const categoryMap = useMemo(() => {
+        const map = new Map<string, any>();
+        allCategories.forEach(c => map.set(c.name, c));
+        return map;
+    }, [allCategories]);
+
+    const formatINR = useCallback((value: number) => {
         return new Intl.NumberFormat('en-IN', {
             style: 'currency',
             currency: 'INR',
             maximumFractionDigits: 0,
         }).format(value / 100);
-    };
-    const getIcon = (category: string) => {
-        const found = allCategories.find(c => c.name === category);
+    }, []);
+
+    const getIcon = useCallback((category: string) => {
+        const found = categoryMap.get(category);
         if (found?.icon) {
             return typeof found.icon === 'string' ? ICON_MAP[found.icon] || Tag : found.icon;
         }
@@ -100,10 +107,10 @@ export function TransactionList({
             case "Salary": return Banknote;
             default: return Tag;
         }
-    };
+    }, [categoryMap]);
 
-    const getColor = (category: string) => {
-        const found = allCategories.find(c => c.name === category);
+    const getColor = useCallback((category: string) => {
+        const found = categoryMap.get(category);
         if (found?.color) return found.color;
 
         const map: Record<string, string> = {
@@ -120,20 +127,20 @@ export function TransactionList({
             "Salary": "#ef4444", "Landline": "#d97706", "VI": "#a855f7",
         };
         return map[category] || hashColor(category);
-    };
+    }, [categoryMap]);
 
-    const handleDelete = async (id: string, e: React.MouseEvent) => {
+    const handleDelete = useCallback(async (id: string, e: React.MouseEvent) => {
         e.stopPropagation();
         if (confirm("Are you sure you want to delete this transaction?")) {
             setDeletingId(id);
             await deleteTransaction(id);
-            setTransactions(transactions.filter(t => t.id !== id));
+            setTransactions(prev => prev.filter(t => t.id !== id));
             setDeletingId(null);
         }
-    };
+    }, []);
 
     // ── Edit handlers ───────────────────────────────────────────────────
-    const openEdit = (tx: any, e: React.MouseEvent) => {
+    const openEdit = useCallback((tx: any, e: React.MouseEvent) => {
         e.stopPropagation();
         setEditingTx(tx);
         setEditForm({
@@ -144,7 +151,7 @@ export function TransactionList({
             date: format(new Date(tx.date), "yyyy-MM-dd"),
             walletId: tx.walletId,
         });
-    };
+    }, []);
 
     const cancelEdit = () => {
         setEditingTx(null);
@@ -176,25 +183,32 @@ export function TransactionList({
     };
 
     // ── Filter + group ──────────────────────────────────────────────────
-    const filteredTransactions = transactions.filter(tx => {
-        if (search && !(tx.description?.toLowerCase().includes(search.toLowerCase()) || tx.category.toLowerCase().includes(search.toLowerCase()))) return false;
-        if (typeFilter !== "ALL" && tx.type !== typeFilter) return false;
-        if (walletFilter !== "ALL" && tx.walletId !== walletFilter) return false;
-        if (dateFilter) {
-            const txDate = format(new Date(tx.date), "yyyy-MM-dd");
-            if (txDate !== dateFilter) return false;
-        }
-        return true;
-    });
+    const filteredTransactions = useMemo(() => {
+        return transactions.filter(tx => {
+            if (search && !(tx.description?.toLowerCase().includes(search.toLowerCase()) || tx.category.toLowerCase().includes(search.toLowerCase()))) return false;
+            if (typeFilter !== "ALL" && tx.type !== typeFilter) return false;
+            if (walletFilter !== "ALL" && tx.walletId !== walletFilter) return false;
+            if (dateFilter) {
+                const txDate = format(new Date(tx.date), "yyyy-MM-dd");
+                if (txDate !== dateFilter) return false;
+            }
+            return true;
+        });
+    }, [transactions, search, typeFilter, walletFilter, dateFilter]);
 
-    const grouped: Record<string, any[]> = {};
-    filteredTransactions.forEach(t => {
-        const dateKey = format(new Date(t.date), "yyyy-MM-dd");
-        if (!grouped[dateKey]) grouped[dateKey] = [];
-        grouped[dateKey].push(t);
-    });
+    const grouped = useMemo(() => {
+        const result: Record<string, any[]> = {};
+        filteredTransactions.forEach(t => {
+            const dateKey = format(new Date(t.date), "yyyy-MM-dd");
+            if (!result[dateKey]) result[dateKey] = [];
+            result[dateKey].push(t);
+        });
+        return result;
+    }, [filteredTransactions]);
 
-    const sortedDates = Object.keys(grouped).sort((a, b) => new Date(b).getTime() - new Date(a).getTime());
+    const sortedDates = useMemo(() => {
+        return Object.keys(grouped).sort((a, b) => new Date(b).getTime() - new Date(a).getTime());
+    }, [grouped]);
 
     // ── Export Functions ───────────────────────────────────────────────
     const formatExportData = (txsToExport: any[]) => {

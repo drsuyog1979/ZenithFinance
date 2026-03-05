@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import { Transaction, Wallet } from "@prisma/client";
 import { format } from "date-fns";
 import {
@@ -38,33 +38,50 @@ function hashColor(str: string): string {
     return `hsl(${hue}, 65%, 55%)`;
 }
 
+export const formatINR = (value: number) => {
+    return new Intl.NumberFormat('en-IN', {
+        style: 'currency',
+        currency: 'INR',
+        maximumFractionDigits: 0,
+    }).format(value / 100);
+};
+
+export const getIcon = (category: string) => {
+    switch (category) {
+        case "Food & Dining": case "Food & Drink": case "Food & Drinks": return Utensils;
+        case "Transport": case "Petrol": return Car;
+        case "Health": return HeartPulse;
+        case "Housing": return Home;
+        case "Utilities": case "Electricity Bill": case "MNGL": return Zap;
+        case "Landline": case "VI": return Phone;
+        case "Entertainment": case "App Purchase": case "App Purchase ": return Tv;
+        case "Shopping": return ShoppingBag;
+        case "Income": case "Clinic": case "Baramati": case "Apollo": case "Inamdar":
+        case "Sahyadri Deccan": case "Sahyadri Bibwewadi": return Briefcase;
+        case "Mutual Funds": case "Investment": return TrendingUp;
+        case "Salary": return Banknote;
+        default: return Tag;
+    }
+};
+
+export const getColor = (category: string) => {
+    const map: Record<string, string> = {
+        "Food & Dining": "#f97316", "Food & Drink": "#f97316", "Food & Drinks": "#f97316",
+        "Transport": "#3b82f6", "Petrol": "#3b82f6",
+        "Shopping": "#ec4899",
+        "Utilities": "#eab308", "Electricity Bill": "#eab308", "MNGL": "#f59e0b",
+        "Health": "#10b981",
+        "Entertainment": "#8b5cf6", "App Purchase": "#8b5cf6", "App Purchase ": "#8b5cf6",
+        "Income": "#22c55e",
+        "Clinic": "#10b981", "Baramati": "#14b8a6", "Apollo": "#06b6d4",
+        "Inamdar": "#0891b2", "Sahyadri Deccan": "#2dd4bf", "Sahyadri Bibwewadi": "#34d399",
+        "Mutual Funds": "#0ea5e9", "Investment": "#0ea5e9",
+        "Salary": "#ef4444", "Landline": "#d97706", "VI": "#a855f7",
+    };
+    return map[category] || hashColor(category);
+};
+
 export function CategoryCards({ data }: { data: { category: string, amount: number, color: string }[] }) {
-    const formatINR = (value: number) => {
-        return new Intl.NumberFormat('en-IN', {
-            style: 'currency',
-            currency: 'INR',
-            maximumFractionDigits: 0,
-        }).format(value / 100);
-    };
-
-    const getIcon = (category: string) => {
-        switch (category) {
-            case "Food & Dining": case "Food & Drink": case "Food & Drinks": return Utensils;
-            case "Transport": case "Petrol": return Car;
-            case "Health": return HeartPulse;
-            case "Housing": return Home;
-            case "Utilities": case "Electricity Bill": case "MNGL": return Zap;
-            case "Landline": case "VI": return Phone;
-            case "Entertainment": case "App Purchase": case "App Purchase ": return Tv;
-            case "Shopping": return ShoppingBag;
-            case "Income": case "Clinic": case "Baramati": case "Apollo": case "Inamdar":
-            case "Sahyadri Deccan": case "Sahyadri Bibwewadi": return Briefcase;
-            case "Mutual Funds": case "Investment": return TrendingUp;
-            case "Salary": return Banknote;
-            default: return Tag;
-        }
-    };
-
     if (data.length === 0) return null;
 
     return (
@@ -118,7 +135,7 @@ export function RecentTransactions({
         } catch { }
     }, []);
 
-    const handleDelete = async (id: string, e: React.MouseEvent) => {
+    const handleDelete = useCallback(async (id: string, e: React.MouseEvent) => {
         e.stopPropagation();
         if (confirm("Are you sure you want to delete this transaction?")) {
             setDeletingId(id);
@@ -126,9 +143,9 @@ export function RecentTransactions({
             setDeletingId(null);
             if (onDelete) onDelete(id);
         }
-    };
+    }, [onDelete]);
 
-    const openEdit = (tx: any, e: React.MouseEvent) => {
+    const openEdit = useCallback((tx: any, e: React.MouseEvent) => {
         e.stopPropagation();
         setEditingTx(tx);
         setEditForm({
@@ -139,7 +156,7 @@ export function RecentTransactions({
             date: format(new Date(tx.date), "yyyy-MM-dd"),
             walletId: tx.walletId,
         });
-    };
+    }, []);
 
     const cancelEdit = () => {
         setEditingTx(null);
@@ -167,48 +184,6 @@ export function RecentTransactions({
         }
         setIsSaving(false);
     };
-    const formatINR = (value: number) => {
-        return new Intl.NumberFormat('en-IN', {
-            style: 'currency',
-            currency: 'INR',
-            maximumFractionDigits: 0,
-        }).format(value / 100);
-    };
-
-    const getIcon = (category: string) => {
-        switch (category) {
-            case "Food & Dining": case "Food & Drink": case "Food & Drinks": return Utensils;
-            case "Transport": case "Petrol": return Car;
-            case "Health": return HeartPulse;
-            case "Housing": return Home;
-            case "Utilities": case "Electricity Bill": case "MNGL": return Zap;
-            case "Landline": case "VI": return Phone;
-            case "Entertainment": case "App Purchase": case "App Purchase ": return Tv;
-            case "Shopping": return ShoppingBag;
-            case "Income": case "Clinic": case "Baramati": case "Apollo": case "Inamdar":
-            case "Sahyadri Deccan": case "Sahyadri Bibwewadi": return Briefcase;
-            case "Mutual Funds": case "Investment": return TrendingUp;
-            case "Salary": return Banknote;
-            default: return Tag;
-        }
-    };
-
-    const getColor = (category: string) => {
-        const map: Record<string, string> = {
-            "Food & Dining": "#f97316", "Food & Drink": "#f97316", "Food & Drinks": "#f97316",
-            "Transport": "#3b82f6", "Petrol": "#3b82f6",
-            "Shopping": "#ec4899",
-            "Utilities": "#eab308", "Electricity Bill": "#eab308", "MNGL": "#f59e0b",
-            "Health": "#10b981",
-            "Entertainment": "#8b5cf6", "App Purchase": "#8b5cf6", "App Purchase ": "#8b5cf6",
-            "Income": "#22c55e",
-            "Clinic": "#10b981", "Baramati": "#14b8a6", "Apollo": "#06b6d4",
-            "Inamdar": "#0891b2", "Sahyadri Deccan": "#2dd4bf", "Sahyadri Bibwewadi": "#34d399",
-            "Mutual Funds": "#0ea5e9", "Investment": "#0ea5e9",
-            "Salary": "#ef4444", "Landline": "#d97706", "VI": "#a855f7",
-        };
-        return map[category] || hashColor(category);
-    };
 
     if (transactions.length === 0) {
         return (
@@ -218,13 +193,16 @@ export function RecentTransactions({
         );
     }
 
-    // Group by date
-    const grouped: Record<string, ExtTransaction[]> = {};
-    transactions.forEach(t => {
-        const dateKey = format(new Date(t.date), "yyyy-MM-dd");
-        if (!grouped[dateKey]) grouped[dateKey] = [];
-        grouped[dateKey].push(t);
-    });
+    // Group by date, computed with useMemo
+    const grouped = useMemo(() => {
+        const result: Record<string, ExtTransaction[]> = {};
+        transactions.forEach(t => {
+            const dateKey = format(new Date(t.date), "yyyy-MM-dd");
+            if (!result[dateKey]) result[dateKey] = [];
+            result[dateKey].push(t);
+        });
+        return result;
+    }, [transactions]);
 
     return (
         <div className="space-y-6">

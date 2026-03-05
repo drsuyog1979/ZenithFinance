@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { MonthSelector } from "@/components/dashboard/MonthSelector";
 import { SummaryCards } from "@/components/dashboard/SummaryCards";
 import { SpendDonutChart, IncomeDonutChart } from "@/components/dashboard/DonutChart";
@@ -82,7 +82,7 @@ export default function DashboardPage() {
         wallets: [],
     });
 
-    const fetchData = async () => {
+    const fetchData = useCallback(async () => {
         setLoading(true);
         const [res, walletsRes] = await Promise.all([
             getTransactions({
@@ -126,16 +126,16 @@ export default function DashboardPage() {
             });
         }
         setLoading(false);
-    };
+    }, [currentDate]);
 
     useEffect(() => {
         fetchData();
-    }, [currentDate]);
+    }, [fetchData]);
 
     // Triggers data refresh when a transaction is edited/deleted
-    const handleTransactionChange = () => {
+    const handleTransactionChange = useCallback(() => {
         fetchData();
-    };
+    }, [fetchData]);
 
     return (
         <div className="p-4 md:p-8 max-w-7xl mx-auto pb-24 md:pb-8">
