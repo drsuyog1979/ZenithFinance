@@ -113,3 +113,32 @@ export async function updateTransaction(
         return { error: error.message };
     }
 }
+
+export async function searchTransactions(query: string, options: { limit?: number } = {}) {
+    try {
+        const userId = await getUserId();
+
+        if (!query || query.trim() === '') {
+            return { data: [] };
+        }
+
+        const transactions = await prisma.transaction.findMany({
+            where: {
+                userId,
+                OR: [
+                    { description: { contains: query, mode: 'insensitive' } },
+                    { category: { contains: query, mode: 'insensitive' } },
+                ]
+            },
+            orderBy: { date: 'desc' },
+            take: options.limit || 50,
+            include: {
+                wallet: true
+            }
+        });
+
+        return { data: transactions };
+    } catch (error: any) {
+        return { error: error.message };
+    }
+}

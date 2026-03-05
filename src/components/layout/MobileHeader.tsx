@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { MoreVertical, Settings, Upload, X, PieChart } from "lucide-react";
+import { MoreVertical, Settings, Upload, X, PieChart, Search } from "lucide-react";
 
 export function MobileHeader() {
     const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -39,14 +39,23 @@ export function MobileHeader() {
                     </span>
                 </Link>
 
-                {/* Action Menu Toggle */}
-                <button
-                    onClick={toggleMenu}
-                    className="p-2 -mr-2 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full transition-colors"
-                    aria-label="Menu"
-                >
-                    {isMenuOpen ? <X size={24} /> : <MoreVertical size={24} />}
-                </button>
+                {/* Actions */}
+                <div className="flex items-center gap-1 -mr-2">
+                    <Link
+                        href="/search"
+                        className="p-2 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full transition-colors"
+                        aria-label="Search"
+                    >
+                        <Search size={22} />
+                    </Link>
+                    <button
+                        onClick={toggleMenu}
+                        className="p-2 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full transition-colors"
+                        aria-label="Menu"
+                    >
+                        {isMenuOpen ? <X size={24} /> : <MoreVertical size={24} />}
+                    </button>
+                </div>
             </header>
 
             {/* Dropdown / Overlay Menu */}

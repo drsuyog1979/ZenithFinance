@@ -2,13 +2,14 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, Wallet, Target, PieChart, Settings, LayoutList, Upload, Coins } from "lucide-react";
+import { LayoutDashboard, Wallet, Target, PieChart, Settings, LayoutList, Upload, Coins, Search } from "lucide-react";
 
 export function Sidebar() {
   const pathname = usePathname();
 
   const navItems = [
     { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
+    { name: "Search", href: "/search", icon: Search },
     { name: "Wallets", href: "/wallets", icon: Wallet },
     { name: "Transactions", href: "/transactions", icon: LayoutList },
     { name: "Analytics", href: "/analytics", icon: PieChart },
