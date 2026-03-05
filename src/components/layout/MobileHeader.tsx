@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { MoreVertical, Settings, Upload, X } from "lucide-react";
+import { MoreVertical, Settings, Upload, X, PieChart } from "lucide-react";
 
 export function MobileHeader() {
     const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -21,6 +21,7 @@ export function MobileHeader() {
     }
 
     const menuItems = [
+        { name: "Analytics", href: "/analytics", icon: PieChart },
         { name: "Import Data", href: "/import", icon: Upload },
         { name: "Settings", href: "/settings", icon: Settings },
     ];
@@ -66,8 +67,8 @@ export function MobileHeader() {
                                         href={item.href}
                                         onClick={closeMenu}
                                         className={`flex items-center gap-3 px-4 py-3 mx-2 my-1 rounded-xl transition-colors ${isActive
-                                                ? "bg-blue-50 dark:bg-[#1a3c5e]/20 text-[var(--color-brand-navy)] dark:text-blue-400 font-medium"
-                                                : "text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800/50"
+                                            ? "bg-blue-50 dark:bg-[#1a3c5e]/20 text-[var(--color-brand-navy)] dark:text-blue-400 font-medium"
+                                            : "text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800/50"
                                             }`}
                                     >
                                         <Icon size={20} />
