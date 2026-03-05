@@ -52,6 +52,17 @@ export function TransactionList({
     const [isSaving, setIsSaving] = useState(false);
     const [allCategories, setAllCategories] = useState<any[]>(CATEGORY_DEFAULTS);
 
+    // ── Export Modal State ──
+    const [isExportModalOpen, setIsExportModalOpen] = useState(false);
+    const [exportFormat, setExportFormat] = useState<"CSV" | "PDF">("CSV");
+    const [exportFilters, setExportFilters] = useState({
+        dateFrom: "",
+        dateTo: "",
+        type: "ALL",
+        category: "ALL",
+        walletId: "ALL"
+    });
+
     useEffect(() => {
         try {
             const saved = localStorage.getItem("zenith-categories-v2");
@@ -186,8 +197,8 @@ export function TransactionList({
     const sortedDates = Object.keys(grouped).sort((a, b) => new Date(b).getTime() - new Date(a).getTime());
 
     // ── Export Functions ───────────────────────────────────────────────
-    const formatExportData = () => {
-        return filteredTransactions.map(tx => ({
+    const formatExportData = (txsToExport: any[]) => {
+        return txsToExport.map(tx => ({
             Date: format(new Date(tx.date), "yyyy-MM-dd"),
             Description: tx.description || tx.category,
             Category: tx.category,
@@ -198,44 +209,74 @@ export function TransactionList({
         }));
     };
 
-    const handleExportCSV = () => {
-        const data = formatExportData();
-        const ws = xlsx.utils.json_to_sheet(data);
-        const wb = xlsx.utils.book_new();
-        xlsx.utils.book_append_sheet(wb, ws, "Transactions");
-        xlsx.writeFile(wb, `Zenith_Transactions_${format(new Date(), "yyyyMMdd")}.xlsx`);
-    };
+    const handleExport = () => {
+        // Apply export filters to all initial transactions
+        const txsToExport = initialTransactions.filter(tx => {
+            if (exportFilters.type !== "ALL" && tx.type !== exportFilters.type) return false;
+            if (exportFilters.category !== "ALL" && tx.category !== exportFilters.category) return false;
+            if (exportFilters.walletId !== "ALL" && tx.walletId !== exportFilters.walletId) return false;
 
-    const handleExportPDF = () => {
-        const doc = new jsPDF();
-
-        // Title
-        doc.setFontSize(16);
-        doc.text("Zenith Finance - Transactions Report", 14, 22);
-
-        // Metadata
-        doc.setFontSize(10);
-        doc.text(`Generated on: ${format(new Date(), "PPpp")}`, 14, 30);
-        doc.text(`Filters: Type=${typeFilter}, Account=${wallets.find(w => w.id === walletFilter)?.name || "All"}`, 14, 35);
-
-        const data = formatExportData();
-
-        autoTable(doc, {
-            startY: 40,
-            head: [['Date', 'Description', 'Category', 'Type', 'Wallet', 'Amount (INR)']],
-            body: data.map(row => [
-                row.Date,
-                row.Description,
-                row.Category,
-                row.Type,
-                row.Wallet,
-                row.Amount
-            ]),
-            styles: { fontSize: 8 },
-            headStyles: { fillColor: [30, 58, 138] }, // brand-navy basically
+            const txDate = new Date(tx.date);
+            if (exportFilters.dateFrom) {
+                if (txDate < new Date(exportFilters.dateFrom)) return false;
+            }
+            if (exportFilters.dateTo) {
+                // Set the time to end of day for the end date to include txs on that day
+                const toDate = new Date(exportFilters.dateTo);
+                toDate.setHours(23, 59, 59, 999);
+                if (txDate > toDate) return false;
+            }
+            return true;
         });
 
-        doc.save(`Zenith_Transactions_${format(new Date(), "yyyyMMdd")}.pdf`);
+        const data = formatExportData(txsToExport);
+
+        if (exportFormat === "CSV") {
+            const ws = xlsx.utils.json_to_sheet(data);
+            const wb = xlsx.utils.book_new();
+            xlsx.utils.book_append_sheet(wb, ws, "Transactions");
+            xlsx.writeFile(wb, `Zenith_Transactions_${format(new Date(), "yyyyMMdd")}.xlsx`);
+        } else {
+            const doc = new jsPDF();
+
+            doc.setFontSize(16);
+            doc.text("Zenith Finance - Transactions Report", 14, 22);
+
+            doc.setFontSize(10);
+            doc.text(`Generated on: ${format(new Date(), "PPpp")}`, 14, 30);
+
+            let filterText = [];
+            if (exportFilters.type !== "ALL") filterText.push(`Type: ${exportFilters.type}`);
+            if (exportFilters.category !== "ALL") filterText.push(`Category: ${exportFilters.category}`);
+            if (exportFilters.walletId !== "ALL") {
+                const w = wallets.find(w => w.id === exportFilters.walletId);
+                if (w) filterText.push(`Wallet: ${w.name}`);
+            }
+            if (exportFilters.dateFrom || exportFilters.dateTo) {
+                filterText.push(`Date: ${exportFilters.dateFrom || 'Any'} to ${exportFilters.dateTo || 'Any'}`);
+            }
+            if (filterText.length > 0) {
+                doc.text(`Filters: ${filterText.join(', ')}`, 14, 35);
+            }
+
+            autoTable(doc, {
+                startY: 40,
+                head: [['Date', 'Description', 'Category', 'Type', 'Wallet', 'Amount (INR)']],
+                body: data.map((row: any) => [
+                    row.Date,
+                    row.Description,
+                    row.Category,
+                    row.Type,
+                    row.Wallet,
+                    row.Amount
+                ]),
+                styles: { fontSize: 8 },
+                headStyles: { fillColor: [30, 58, 138] }, // brand-navy
+            });
+
+            doc.save(`Zenith_Transactions_${format(new Date(), "yyyyMMdd")}.pdf`);
+        }
+        setIsExportModalOpen(false);
     };
 
     return (
@@ -284,20 +325,12 @@ export function TransactionList({
                     <div className="h-6 w-px bg-gray-200 dark:bg-gray-800 my-auto ml-1 mr-1 hidden sm:block"></div>
 
                     <button
-                        onClick={handleExportCSV}
-                        className="flex items-center gap-2 px-3 py-2 bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-300 rounded-xl hover:bg-emerald-100 dark:hover:bg-emerald-900/40 transition-colors text-sm font-medium whitespace-nowrap"
-                        title="Export as Excel"
+                        onClick={() => setIsExportModalOpen(true)}
+                        className="flex items-center gap-2 px-3 py-2 bg-indigo-50 dark:bg-indigo-900/20 text-indigo-700 dark:text-indigo-300 rounded-xl hover:bg-indigo-100 dark:hover:bg-indigo-900/40 transition-colors text-sm font-medium whitespace-nowrap"
+                        title="Export Data"
                     >
                         <Download size={14} />
-                        <span className="hidden lg:inline">Excel</span>
-                    </button>
-                    <button
-                        onClick={handleExportPDF}
-                        className="flex items-center gap-2 px-3 py-2 bg-rose-50 dark:bg-rose-900/20 text-rose-700 dark:text-rose-300 rounded-xl hover:bg-rose-100 dark:hover:bg-rose-900/40 transition-colors text-sm font-medium whitespace-nowrap"
-                        title="Export as PDF"
-                    >
-                        <Download size={14} />
-                        <span className="hidden lg:inline">PDF</span>
+                        <span className="hidden lg:inline">Export</span>
                     </button>
                 </div>
             </div>
@@ -316,6 +349,123 @@ export function TransactionList({
                     </div>
                 </div>
             )}
+
+            {/* ── Export Modal ── */}
+            {isExportModalOpen && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4" onClick={() => setIsExportModalOpen(false)}>
+                    <div
+                        className="bg-white dark:bg-gray-900 rounded-3xl shadow-2xl w-full max-w-md p-6 space-y-5 animate-in fade-in zoom-in-95"
+                        onClick={(e) => e.stopPropagation()}
+                    >
+                        <div className="flex items-center justify-between">
+                            <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100">Export Transactions</h2>
+                            <button onClick={() => setIsExportModalOpen(false)} className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-xl transition-colors" title="Close" aria-label="Close export dialog">
+                                <X size={20} className="text-gray-500" />
+                            </button>
+                        </div>
+
+                        {/* Format */}
+                        <div>
+                            <label className="text-sm font-medium text-gray-700 dark:text-gray-300 block mb-1.5">Format</label>
+                            <div className="flex gap-2">
+                                <button
+                                    onClick={() => setExportFormat("CSV")}
+                                    className={`flex-1 py-2 rounded-xl text-sm font-medium transition-colors border ${exportFormat === "CSV" ? "bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800/30" : "bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-400 border-gray-200 dark:border-gray-700 hover:border-gray-400"}`}
+                                >
+                                    Excel (CSV)
+                                </button>
+                                <button
+                                    onClick={() => setExportFormat("PDF")}
+                                    className={`flex-1 py-2 rounded-xl text-sm font-medium transition-colors border ${exportFormat === "PDF" ? "bg-rose-50 dark:bg-rose-900/20 text-rose-700 dark:text-rose-300 border-rose-200 dark:border-rose-800/30" : "bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-400 border-gray-200 dark:border-gray-700 hover:border-gray-400"}`}
+                                >
+                                    PDF Report
+                                </button>
+                            </div>
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-4">
+                            {/* Date From */}
+                            <div>
+                                <label className="text-sm font-medium text-gray-700 dark:text-gray-300 block mb-1.5">From Date</label>
+                                <input
+                                    type="date"
+                                    value={exportFilters.dateFrom}
+                                    onChange={(e) => setExportFilters({ ...exportFilters, dateFrom: e.target.value })}
+                                    className="w-full px-3 py-2.5 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-[var(--color-brand-navy)] outline-none text-sm"
+                                />
+                            </div>
+                            {/* Date To */}
+                            <div>
+                                <label className="text-sm font-medium text-gray-700 dark:text-gray-300 block mb-1.5">To Date</label>
+                                <input
+                                    type="date"
+                                    value={exportFilters.dateTo}
+                                    onChange={(e) => setExportFilters({ ...exportFilters, dateTo: e.target.value })}
+                                    className="w-full px-3 py-2.5 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-[var(--color-brand-navy)] outline-none text-sm"
+                                />
+                            </div>
+                        </div>
+
+                        {/* Type & Wallet Selection grid */}
+                        <div className="grid grid-cols-2 gap-4">
+                            <div>
+                                <label className="text-sm font-medium text-gray-700 dark:text-gray-300 block mb-1.5">Type</label>
+                                <select
+                                    value={exportFilters.type}
+                                    onChange={(e) => setExportFilters({ ...exportFilters, type: e.target.value })}
+                                    className="w-full px-3 py-2.5 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-[var(--color-brand-navy)] outline-none text-sm"
+                                >
+                                    <option value="ALL">All Types</option>
+                                    <option value="EXPENSE">Expenses</option>
+                                    <option value="INCOME">Income</option>
+                                    <option value="INVESTMENT">Investment</option>
+                                    <option value="TRANSFER">Transfer</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label className="text-sm font-medium text-gray-700 dark:text-gray-300 block mb-1.5">Wallet</label>
+                                <select
+                                    value={exportFilters.walletId}
+                                    onChange={(e) => setExportFilters({ ...exportFilters, walletId: e.target.value })}
+                                    className="w-full px-3 py-2.5 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-[var(--color-brand-navy)] outline-none text-sm"
+                                >
+                                    <option value="ALL">All Accounts</option>
+                                    {wallets.map(w => (
+                                        <option key={w.id} value={w.id}>{w.name}</option>
+                                    ))}
+                                </select>
+                            </div>
+                        </div>
+
+                        {/* Category */}
+                        <div>
+                            <label className="text-sm font-medium text-gray-700 dark:text-gray-300 block mb-1.5">Category</label>
+                            <select
+                                value={exportFilters.category}
+                                onChange={(e) => setExportFilters({ ...exportFilters, category: e.target.value })}
+                                className="w-full px-3 py-2.5 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-[var(--color-brand-navy)] outline-none text-sm"
+                            >
+                                <option value="ALL">All Categories</option>
+                                {allCategories.map(c => (
+                                    <option key={c.name} value={c.name}>{c.name}</option>
+                                ))}
+                            </select>
+                        </div>
+
+                        {/* Actions */}
+                        <div className="flex gap-3 pt-2">
+                            <button
+                                onClick={handleExport}
+                                className="flex-1 py-3 bg-[var(--color-brand-navy)] text-white rounded-xl font-semibold flex items-center justify-center gap-2 hover:opacity-90 transition-opacity"
+                            >
+                                <Download size={18} />
+                                Export {exportFormat}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
             {/* ── Edit Modal ── */}
             {
                 editingTx && (
