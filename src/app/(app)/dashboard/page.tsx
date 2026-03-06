@@ -105,12 +105,10 @@ export default function DashboardPage() {
                     income += tx.amount;
                     incomeCategoryMap[tx.category] = (incomeCategoryMap[tx.category] || 0) + tx.amount;
                 } else if (tx.type === "EXPENSE") {
-                    if (tx.category === "Investment" || tx.category === "Mutual Funds") {
-                        investments += tx.amount;
-                    } else {
-                        expenses += tx.amount;
-                        expenseCategoryMap[tx.category] = (expenseCategoryMap[tx.category] || 0) + tx.amount;
-                    }
+                    expenses += tx.amount;
+                    expenseCategoryMap[tx.category] = (expenseCategoryMap[tx.category] || 0) + tx.amount;
+                } else if (tx.type === "INVESTMENT") {
+                    investments += tx.amount;
                 }
             });
 

@@ -261,11 +261,17 @@ export async function commitSpendeeImport(rows: SpendeeRow[], source: ImportSour
     try {
         const userId = await getUserAndEnsureExists();
 
-        // Normalize rows (Dates are passed as strings from client)
         const normalizedRows = rows.map(r => ({
             ...r,
             date: new Date(r.date)
         }));
+
+        if (normalizedRows.length === 0) {
+            return { imported: 0, skipped: 0, walletsCreated: [], importSessionId: "" };
+        }
+
+        const earliest = new Date(Math.min(...normalizedRows.map(r => r.date.getTime())));
+        const latest = new Date(Math.max(...normalizedRows.map(r => r.date.getTime())));
 
         // 1. Find or create wallets
         const walletMap = new Map<string, string>(); // walletName → walletId
@@ -285,18 +291,35 @@ export async function commitSpendeeImport(rows: SpendeeRow[], source: ImportSour
             }
         }
 
-        // 2. Bulk insert with duplicate skipping (upsert strategy)
+        // 2. Fetch all existing transactions in the date range for deduplication
+        const existingTxs = await prisma.transaction.findMany({
+            where: {
+                userId,
+                date: { gte: earliest, lte: latest } // Window bounds
+            },
+            select: { id: true, date: true, amount: true, description: true }
+        });
+
+        // Soft-match deduplication: skip if ANY transaction exists on this date with this amount
+        // Key: YYYY-MM-DD_Amount
+        const existingMap = new Map<string, { id: string, description: string | null }>();
+        for (const tx of existingTxs) {
+            const key = `${tx.date.toISOString().split('T')[0]}_${tx.amount}`;
+            existingMap.set(key, { id: tx.id, description: tx.description });
+        }
+
+        // 3. Prepare data for batch insert and batched updates
         let imported = 0;
         let skipped = 0;
-
-        // Use a session ID to allow rollback
         const importSessionId = `${source.toLowerCase()}_${Date.now()}`;
+
+        const newTransactionsToCreate: any[] = [];
+        const updatePromises: any[] = [];
 
         for (const row of normalizedRows) {
             const walletId = walletMap.get(row.walletName.toLowerCase())!;
 
             // SECURITY/CRASH PREVENT: Skip rows with amounts that exceed the 32-bit integer limit
-            // (e.g. if a long reference ID was incorrectly parsed as an amount)
             const MAX_INT32 = 2147483647;
             if (row.amount > MAX_INT32 || row.amount < -MAX_INT32) {
                 console.warn(`Skipping row with invalid amount (overflow): ${row.amount}`);
@@ -304,55 +327,54 @@ export async function commitSpendeeImport(rows: SpendeeRow[], source: ImportSour
                 continue;
             }
 
-            try {
-                // Soft-match deduplication: skip if ANY transaction exists on this date with this amount
-                // User confirmed they never have two different entries of the same amount on the same day.
-                const existing = await prisma.transaction.findFirst({
-                    where: {
-                        userId,
-                        date: row.date,
-                        amount: row.amount,
-                    }
-                });
+            const key = `${row.date.toISOString().split('T')[0]}_${row.amount}`;
+            const existing = existingMap.get(key);
 
-                if (existing) {
-                    // Enriching logic: append bank reference to manual entry if not already there
-                    const bankRef = row.note ? `[${source}: ${row.note}]` : "";
-                    if (bankRef && (!existing.description || !existing.description.includes(row.note))) {
-                        const combinedDesc = existing.description
-                            ? `${existing.description} ${bankRef}`.substring(0, 1000)
-                            : bankRef;
+            if (existing) {
+                // Enriching logic: append bank reference to manual entry if not already there
+                const bankRef = row.note ? `[${source}: ${row.note}]` : "";
+                if (bankRef && (!existing.description || !existing.description.includes(row.note))) {
+                    const combinedDesc = existing.description
+                        ? `${existing.description} ${bankRef}`.substring(0, 1000)
+                        : bankRef;
 
-                        await prisma.transaction.update({
+                    updatePromises.push(
+                        prisma.transaction.update({
                             where: { id: existing.id },
                             data: { description: combinedDesc }
-                        });
-                    }
-                    skipped++;
-                    continue;
+                        })
+                    );
                 }
-
-                await prisma.transaction.create({
-                    data: {
-                        date: row.date,
-                        amount: row.amount,
-                        category: row.category,
-                        description: row.note || null,
-                        source: source,
-                        type: row.type,
-                        walletId,
-                        userId,
-                    }
+                skipped++;
+            } else {
+                newTransactionsToCreate.push({
+                    date: row.date,
+                    amount: row.amount,
+                    category: row.category,
+                    description: row.note || null,
+                    source: source,
+                    type: row.type,
+                    walletId,
+                    userId,
                 });
                 imported++;
-            } catch (e: any) {
-                // Unique constraint violation = duplicate → skip
-                if (e.code === "P2002") {
-                    skipped++;
-                } else {
-                    throw e;
-                }
             }
+        }
+
+        // 4. Execute Batch Writes
+        if (newTransactionsToCreate.length > 0) {
+            const CHUNK_SIZE = 500;
+            for (let i = 0; i < newTransactionsToCreate.length; i += CHUNK_SIZE) {
+                const chunk = newTransactionsToCreate.slice(i, i + CHUNK_SIZE);
+                await prisma.transaction.createMany({
+                    data: chunk,
+                    skipDuplicates: true // Just in case
+                });
+            }
+        }
+
+        if (updatePromises.length > 0) {
+            await prisma.$transaction(updatePromises);
         }
 
         // Store session id in a simple way — tag by import time

@@ -53,7 +53,7 @@ export function SummaryCards({ summary }: { summary: SummaryResult }) {
             </Link>
             {/* Investments */}
             <Link
-                href="/transactions?category=Investment"
+                href="/transactions?type=INVESTMENT"
                 className="bg-white dark:bg-gray-900 rounded-2xl p-6 shadow-sm border border-gray-100 dark:border-gray-800 transition-all hover:scale-[1.02] hover:shadow-md hover:border-blue-200 dark:hover:border-blue-900 block group"
             >
                 <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-1 group-hover:text-blue-500 transition-colors">
