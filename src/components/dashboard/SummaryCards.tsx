@@ -6,6 +6,7 @@ interface SummaryResult {
     totalBalance: number;
     income: number;
     expenses: number;
+    investments: number;
 }
 
 export function SummaryCards({ summary }: { summary: SummaryResult }) {
@@ -18,7 +19,7 @@ export function SummaryCards({ summary }: { summary: SummaryResult }) {
     };
 
     return (
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
             {/* Net Balance — not clickable */}
             <div className="bg-[var(--color-brand-navy)] rounded-2xl p-6 shadow-md text-white transition-transform hover:scale-[1.02]">
                 <h3 className="text-sm font-medium text-blue-200 mb-1">Net Balance</h3>
@@ -48,6 +49,18 @@ export function SummaryCards({ summary }: { summary: SummaryResult }) {
                 </h3>
                 <p className="text-3xl font-bold text-red-500 dark:text-red-400">
                     -{formatINR(summary.expenses)}
+                </p>
+            </Link>
+            {/* Investments */}
+            <Link
+                href="/transactions?category=Investment"
+                className="bg-white dark:bg-gray-900 rounded-2xl p-6 shadow-sm border border-gray-100 dark:border-gray-800 transition-all hover:scale-[1.02] hover:shadow-md hover:border-blue-200 dark:hover:border-blue-900 block group"
+            >
+                <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-1 group-hover:text-blue-500 transition-colors">
+                    Investments ↗
+                </h3>
+                <p className="text-3xl font-bold text-blue-500 dark:text-blue-400">
+                    {formatINR(summary.investments)}
                 </p>
             </Link>
         </div>

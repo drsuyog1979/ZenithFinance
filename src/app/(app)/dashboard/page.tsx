@@ -67,14 +67,14 @@ export default function DashboardPage() {
     const [loading, setLoading] = useState(true);
     const [activeChart, setActiveChart] = useState<"spending" | "income">("spending");
     const [data, setData] = useState<{
-        summary: { totalBalance: number; income: number; expenses: number };
+        summary: { totalBalance: number; income: number; expenses: number; investments: number };
         spendDonutData: any[];
         incomeDonutData: any[];
         categoryData: any[];
         transactions: any[];
         wallets: any[];
     }>({
-        summary: { totalBalance: 0, income: 0, expenses: 0 },
+        summary: { totalBalance: 0, income: 0, expenses: 0, investments: 0 },
         spendDonutData: [],
         incomeDonutData: [],
         categoryData: [],
@@ -96,6 +96,7 @@ export default function DashboardPage() {
         if (res.data) {
             let income = 0;
             let expenses = 0;
+            let investments = 0;
             const expenseCategoryMap: Record<string, number> = {};
             const incomeCategoryMap: Record<string, number> = {};
 
@@ -104,8 +105,12 @@ export default function DashboardPage() {
                     income += tx.amount;
                     incomeCategoryMap[tx.category] = (incomeCategoryMap[tx.category] || 0) + tx.amount;
                 } else if (tx.type === "EXPENSE") {
-                    expenses += tx.amount;
-                    expenseCategoryMap[tx.category] = (expenseCategoryMap[tx.category] || 0) + tx.amount;
+                    if (tx.category === "Investment" || tx.category === "Mutual Funds") {
+                        investments += tx.amount;
+                    } else {
+                        expenses += tx.amount;
+                        expenseCategoryMap[tx.category] = (expenseCategoryMap[tx.category] || 0) + tx.amount;
+                    }
                 }
             });
 
@@ -117,7 +122,7 @@ export default function DashboardPage() {
             const spendData = buildChartData(expenseCategoryMap);
 
             setData({
-                summary: { totalBalance: income - expenses, income, expenses },
+                summary: { totalBalance: income - expenses - investments, income, expenses, investments },
                 spendDonutData: spendData,
                 incomeDonutData: buildChartData(incomeCategoryMap),
                 categoryData: spendData.map(d => ({ category: d.name, amount: d.value, color: d.color })),
